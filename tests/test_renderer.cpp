@@ -16,7 +16,9 @@ spagyrist::document sample_document()
     doc.blocks.push_back(spagyrist::block::paragraph({
         spagyrist::inline_element::text_node("A "),
         spagyrist::inline_element::strong({spagyrist::inline_element::text_node("portable")}),
-        spagyrist::inline_element::text_node(" operating system family."),
+        spagyrist::inline_element::text_node(" operating system family related to "),
+        spagyrist::inline_element::link("Unix-like", "https://en.wikipedia.org/wiki/Unix-like"),
+        spagyrist::inline_element::text_node("."),
     }));
     doc.blocks.push_back(spagyrist::block::code("uname -a\n", "sh"));
     return doc;
@@ -28,6 +30,7 @@ void markdown_renderer_keeps_markup()
 
     SPAGYRIST_CHECK(rendered.find("# Linux") != std::string::npos);
     SPAGYRIST_CHECK(rendered.find("**portable**") != std::string::npos);
+    SPAGYRIST_CHECK(rendered.find("[Unix-like](https://en.wikipedia.org/wiki/Unix-like)") != std::string::npos);
     SPAGYRIST_CHECK(rendered.find("```sh") != std::string::npos);
 }
 
@@ -37,6 +40,8 @@ void plain_renderer_removes_markup()
 
     SPAGYRIST_CHECK(rendered.find("Linux") != std::string::npos);
     SPAGYRIST_CHECK(rendered.find("portable") != std::string::npos);
+    SPAGYRIST_CHECK(rendered.find("Unix-like") != std::string::npos);
+    SPAGYRIST_CHECK(rendered.find("https://en.wikipedia.org/wiki/Unix-like") == std::string::npos);
     SPAGYRIST_CHECK(rendered.find("**portable**") == std::string::npos);
     SPAGYRIST_CHECK(rendered.find("```") == std::string::npos);
 }
@@ -57,4 +62,3 @@ void run_renderer_tests()
     plain_renderer_removes_markup();
     terminal_renderer_is_available_as_separate_format();
 }
-

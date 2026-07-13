@@ -90,10 +90,52 @@ void number_selector_maps_number_to_index()
     SPAGYRIST_CHECK(output.str().find("1. Linux") != std::string::npos);
 }
 
-void number_selector_empty_input_cancels()
+void number_selector_empty_input_retries()
 {
     auto values = candidates();
-    std::istringstream input{"\n"};
+    std::istringstream input{"\n1\n"};
+    std::ostringstream output;
+    spagyrist::number_selector selector{{.input = &input, .output = &output}};
+
+    const auto selected = spagyrist::select_candidate(selector, values);
+
+    SPAGYRIST_CHECK(selected.has_value());
+    SPAGYRIST_CHECK(selected->index == 0);
+    SPAGYRIST_CHECK(output.str().find("Enter a number between 1 and 2.") != std::string::npos);
+}
+
+void number_selector_invalid_input_retries()
+{
+    auto values = candidates();
+    std::istringstream input{"abc\n1\n"};
+    std::ostringstream output;
+    spagyrist::number_selector selector{{.input = &input, .output = &output}};
+
+    const auto selected = spagyrist::select_candidate(selector, values);
+
+    SPAGYRIST_CHECK(selected.has_value());
+    SPAGYRIST_CHECK(selected->index == 0);
+    SPAGYRIST_CHECK(output.str().find("Enter a number between 1 and 2.") != std::string::npos);
+}
+
+void number_selector_out_of_range_retries_and_shows_maximum()
+{
+    auto values = candidates();
+    std::istringstream input{"9\n2\n"};
+    std::ostringstream output;
+    spagyrist::number_selector selector{{.input = &input, .output = &output}};
+
+    const auto selected = spagyrist::select_candidate(selector, values);
+
+    SPAGYRIST_CHECK(selected.has_value());
+    SPAGYRIST_CHECK(selected->index == 1);
+    SPAGYRIST_CHECK(output.str().find("Selection out of range. Maximum is 2.") != std::string::npos);
+}
+
+void number_selector_eof_cancels()
+{
+    auto values = candidates();
+    std::istringstream input;
     std::ostringstream output;
     spagyrist::number_selector selector{{.input = &input, .output = &output}};
 
@@ -130,6 +172,30 @@ void fzf_selector_uses_external_process_even_for_one_candidate()
     std::filesystem::remove("/tmp/spagyrist-fake-fzf-input");
 }
 
+void fzf_selector_reports_missing_executable()
+{
+    spagyrist::fzf_selector_options options;
+    options.executable = "/tmp/spagyrist-missing-fzf-for-test";
+    spagyrist::fzf_selector selector{options};
+
+    SPAGYRIST_CHECK(!selector.is_available());
+}
+
+void selector_fallback_uses_fallback_when_fzf_is_missing()
+{
+    auto values = candidates();
+    spagyrist::fzf_selector_options options;
+    options.executable = "/tmp/spagyrist-missing-fzf-for-test";
+    spagyrist::fzf_selector primary{options};
+    fixed_selector fallback{1};
+
+    const auto selected = spagyrist::select_candidate_with_fallback(primary, fallback, values);
+
+    SPAGYRIST_CHECK(selected.has_value());
+    SPAGYRIST_CHECK(selected->index == 1);
+    SPAGYRIST_CHECK(fallback.observed_size == values.size());
+}
+
 } // namespace
 
 void run_selector_tests()
@@ -138,6 +204,11 @@ void run_selector_tests()
     selector_cancel_returns_empty_selection();
     selector_out_of_range_returns_empty_selection();
     number_selector_maps_number_to_index();
-    number_selector_empty_input_cancels();
+    number_selector_empty_input_retries();
+    number_selector_invalid_input_retries();
+    number_selector_out_of_range_retries_and_shows_maximum();
+    number_selector_eof_cancels();
     fzf_selector_uses_external_process_even_for_one_candidate();
+    fzf_selector_reports_missing_executable();
+    selector_fallback_uses_fallback_when_fzf_is_missing();
 }

@@ -18,5 +18,10 @@ public:
 [[nodiscard]] std::optional<selection>
 select_candidate(selector& selector, std::span<const candidate> candidates);
 
-} // namespace spagyrist
+[[nodiscard]] std::optional<selection>
+select_candidate_with_fallback(
+    selector& primary,
+    selector& fallback,
+    std::span<const candidate> candidates);
 
+} // namespace spagyrist

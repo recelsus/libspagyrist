@@ -18,17 +18,14 @@ std::string summary(const candidate& value)
     return output;
 }
 
-std::optional<std::size_t> parse_choice(const std::string& value, std::size_t count)
+std::optional<std::size_t> parse_number(const std::string& value)
 {
     std::size_t choice{};
     const auto result = std::from_chars(value.data(), value.data() + value.size(), choice);
     if (result.ec != std::errc{} || result.ptr != value.data() + value.size()) {
         return std::nullopt;
     }
-    if (choice == 0 || choice > count) {
-        return std::nullopt;
-    }
-    return choice - 1;
+    return choice;
 }
 
 } // namespace
@@ -58,16 +55,26 @@ number_selector::select(std::span<const candidate> candidates)
     for (std::size_t i = 0; i < candidates.size(); ++i) {
         output << "  " << (i + 1) << ". " << summary(candidates[i]) << '\n';
     }
-    output << "Enter number, or empty to cancel: ";
-    output.flush();
+    while (true) {
+        output << "Enter number, or EOF to cancel: ";
+        output.flush();
 
-    std::string line;
-    if (!std::getline(input, line) || line.empty()) {
-        return std::nullopt;
+        std::string line;
+        if (!std::getline(input, line)) {
+            return std::nullopt;
+        }
+
+        const auto choice = parse_number(line);
+        if (!choice) {
+            output << "Enter a number between 1 and " << candidates.size() << ".\n";
+            continue;
+        }
+        if (*choice == 0 || *choice > candidates.size()) {
+            output << "Selection out of range. Maximum is " << candidates.size() << ".\n";
+            continue;
+        }
+        return *choice - 1;
     }
-
-    return parse_choice(line, candidates.size());
 }
 
 } // namespace spagyrist
-
