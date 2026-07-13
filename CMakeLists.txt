@@ -57,6 +57,13 @@ install(
 )
 
 install(
+  FILES
+    LICENSE
+    THIRD_PARTY_NOTICES.md
+  DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/doc/spagyrist
+)
+
+install(
   EXPORT spagyristTargets
   NAMESPACE spagyrist::
   DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/spagyrist
