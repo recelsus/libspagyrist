@@ -118,20 +118,11 @@ double score_match(std::string_view query, std::string_view candidate, const std
         }
     }
 
+    const auto span = positions.back() - positions.front() + 1;
     score -= static_cast<double>(total_gap) * 1.5;
+    score -= static_cast<double>(span > query.size() ? span - query.size() : 0) * 0.75;
     score -= static_cast<double>(candidate.size()) * 0.01;
     return score;
-}
-
-bool is_coherent_match(std::string_view query, const std::vector<std::size_t>& positions)
-{
-    if (query.size() <= 2 || positions.size() <= 1) {
-        return true;
-    }
-
-    const auto span = positions.back() - positions.front() + 1;
-    const auto max_span = query.size() * 3;
-    return span <= max_span;
 }
 
 } // namespace
@@ -172,10 +163,6 @@ fuzzy_match(
         if (!found) {
             return match_result{};
         }
-    }
-
-    if (!is_coherent_match(query, positions)) {
-        return match_result{};
     }
 
     return match_result{

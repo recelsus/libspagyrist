@@ -19,9 +19,12 @@ struct match_options {
 struct match_result {
     bool matched{};
     double score{};
+    // Byte offsets in the candidate string. The current matcher is greedy and byte-based.
     std::vector<std::size_t> positions;
 };
 
+// Greedy subsequence matcher. This is not fzy-compatible and does not search
+// for the globally optimal alignment when repeated characters exist.
 [[nodiscard]] match_result
 fuzzy_match(
     std::string_view query,

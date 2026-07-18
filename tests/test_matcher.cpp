@@ -42,13 +42,26 @@ void fuzzy_match_rejects_missing_characters()
     SPAGYRIST_CHECK(result.positions.empty());
 }
 
-void fuzzy_match_rejects_scattered_long_matches()
+void fuzzy_match_keeps_scattered_long_matches_with_lower_score()
 {
-    const auto result = spagyrist::fuzzy_match(
+    const auto scattered = spagyrist::fuzzy_match(
         "Apple",
         "A research operating system from Bell Labs https://example.test/plan9");
+    const auto close = spagyrist::fuzzy_match("Apple", "Apple operating system core");
 
-    SPAGYRIST_CHECK(!result.matched);
+    SPAGYRIST_CHECK(scattered.matched);
+    SPAGYRIST_CHECK(close.matched);
+    SPAGYRIST_CHECK(close.score > scattered.score);
+}
+
+void fuzzy_match_allows_long_candidate_abbreviation()
+{
+    const auto result = spagyrist::fuzzy_match(
+        "fb",
+        "src/selector/builtin/fuzzy_builtin_selector_behavior.cpp");
+
+    SPAGYRIST_CHECK(result.matched);
+    SPAGYRIST_CHECK(result.positions.size() == 2);
 }
 
 void fuzzy_match_scores_consecutive_match_higher()
@@ -157,7 +170,8 @@ void run_matcher_tests()
     fuzzy_match_matches_prefix();
     fuzzy_match_matches_subsequence();
     fuzzy_match_rejects_missing_characters();
-    fuzzy_match_rejects_scattered_long_matches();
+    fuzzy_match_keeps_scattered_long_matches_with_lower_score();
+    fuzzy_match_allows_long_candidate_abbreviation();
     fuzzy_match_scores_consecutive_match_higher();
     fuzzy_match_scores_word_boundary_higher();
     fuzzy_match_scores_case_boundary_higher();

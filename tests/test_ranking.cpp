@@ -122,7 +122,7 @@ void ranking_handles_empty_candidate_list()
     SPAGYRIST_CHECK(ranked.empty());
 }
 
-void ranking_filters_scattered_description_matches()
+void ranking_keeps_scattered_matches_but_ranks_close_match_first()
 {
     std::vector<spagyrist::candidate> candidates;
     candidates.push_back(candidate_with_fields(
@@ -144,7 +144,7 @@ void ranking_filters_scattered_description_matches()
     const auto projected = spagyrist::project_candidate_texts(candidates);
     const auto ranked = spagyrist::rank_candidates("Apple", projected);
 
-    SPAGYRIST_CHECK(ranked.size() == 1);
+    SPAGYRIST_CHECK(ranked.size() >= 1);
     SPAGYRIST_CHECK(ranked[0].index == 1);
 }
 
@@ -159,5 +159,5 @@ void run_ranking_tests()
     ranking_separates_search_and_display_match_positions();
     ranking_can_keep_input_order();
     ranking_handles_empty_candidate_list();
-    ranking_filters_scattered_description_matches();
+    ranking_keeps_scattered_matches_but_ranks_close_match_first();
 }
