@@ -21,6 +21,9 @@ public:
     [[nodiscard]] std::optional<std::size_t>
     select(std::span<const candidate> candidates) override;
 
+    [[nodiscard]] selector_result
+    select_result(std::span<const candidate> candidates) override;
+
 private:
     fzf_selector_options options_;
 };
