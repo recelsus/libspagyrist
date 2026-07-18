@@ -2,18 +2,20 @@
 
 #include "spagyrist/selector.hpp"
 
-#include <iosfwd>
+#include <cstddef>
 
 namespace spagyrist {
 
-struct number_selector_options {
-    std::istream* input{};
-    std::ostream* output{};
+struct builtin_selector_options {
+    std::size_t visible_count{10};
+    bool use_color{true};
 };
 
-class number_selector final : public selector {
+class builtin_selector final : public selector {
 public:
-    explicit number_selector(number_selector_options options = {});
+    explicit builtin_selector(builtin_selector_options options = {});
+
+    [[nodiscard]] bool is_available() const override;
 
     [[nodiscard]] std::optional<std::size_t>
     select(std::span<const candidate> candidates) override;
@@ -22,7 +24,7 @@ public:
     select_result(std::span<const candidate> candidates) override;
 
 private:
-    number_selector_options options_;
+    builtin_selector_options options_;
 };
 
 } // namespace spagyrist

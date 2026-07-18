@@ -1,20 +1,18 @@
 #pragma once
 
-#include "spagyrist/selector.hpp"
-
-#include <string>
-#include <vector>
+#include "spagyrist/selector/builtin.hpp"
+#include "spagyrist/selector/number.hpp"
 
 namespace spagyrist {
 
-struct fzf_selector_options {
-    std::string executable{"fzf"};
-    std::vector<std::string> arguments;
+struct auto_selector_options {
+    builtin_selector_options builtin;
+    number_selector_options number;
 };
 
-class fzf_selector final : public selector {
+class auto_selector final : public selector {
 public:
-    explicit fzf_selector(fzf_selector_options options = {});
+    explicit auto_selector(auto_selector_options options = {});
 
     [[nodiscard]] bool is_available() const override;
 
@@ -25,7 +23,7 @@ public:
     select_result(std::span<const candidate> candidates) override;
 
 private:
-    fzf_selector_options options_;
+    auto_selector_options options_;
 };
 
 } // namespace spagyrist

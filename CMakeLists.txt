@@ -12,24 +12,52 @@ include(GNUInstallDirs)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 option(SPAGYRIST_BUILD_TESTS "Build Spagyrist tests" ON)
+if(CMAKE_SOURCE_DIR STREQUAL PROJECT_SOURCE_DIR)
+  set(SPAGYRIST_BUILD_EXAMPLES_DEFAULT ON)
+else()
+  set(SPAGYRIST_BUILD_EXAMPLES_DEFAULT OFF)
+endif()
+option(SPAGYRIST_BUILD_EXAMPLES "Build Spagyrist example clients" ${SPAGYRIST_BUILD_EXAMPLES_DEFAULT})
 
 add_library(spagyrist STATIC
   src/candidate.cpp
+  src/candidate_text.cpp
   src/document.cpp
+  src/help.cpp
+  src/matcher.cpp
+  src/output/editor.cpp
   src/output/stdout.cpp
+  src/ranking.cpp
   src/renderer/markdown_renderer.cpp
   src/renderer/plain_renderer.cpp
   src/renderer/renderer.cpp
   src/renderer/terminal_renderer.cpp
-  src/selector/fzf.cpp
-  src/selector/number.cpp
+  src/selector/auto.cpp
+  src/selector/builtin/builtin.cpp
+  src/selector/builtin/screen.cpp
+  src/selector/builtin/state.cpp
+  src/selector/builtin/view.cpp
+  src/selector/builtin/terminal.cpp
+  src/selector/builtin/utf8.cpp
+  src/selector/fzf/executable.cpp
+  src/selector/fzf/fzf.cpp
+  src/selector/fzf/format.cpp
+  src/selector/fzf/process.cpp
+  src/selector/number/number.cpp
   src/selector/selector.cpp
+  src/runtime.cpp
   src/validation.cpp
+  src/version.cpp
 )
 
 add_library(spagyrist::spagyrist ALIAS spagyrist)
 
 target_compile_features(spagyrist PUBLIC cxx_std_20)
+
+target_compile_definitions(spagyrist
+  PRIVATE
+    SPAGYRIST_VERSION="${PROJECT_VERSION}"
+)
 
 target_include_directories(spagyrist
   PUBLIC
@@ -91,4 +119,8 @@ install(
 if(SPAGYRIST_BUILD_TESTS)
   enable_testing()
   add_subdirectory(tests)
+endif()
+
+if(SPAGYRIST_BUILD_EXAMPLES)
+  add_subdirectory(examples)
 endif()
