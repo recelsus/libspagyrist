@@ -2,9 +2,11 @@
 
 #include "test_support.hpp"
 
+#include <chrono>
 #include <stdexcept>
 #include <string>
 #include <string_view>
+#include <thread>
 #include <unistd.h>
 
 namespace {
@@ -148,6 +150,30 @@ void terminal_input_reads_utf8_from_fd()
     SPAGYRIST_CHECK(read.value == input);
 }
 
+void terminal_input_reads_delayed_utf8_continuation_bytes()
+{
+    using spagyrist::detail::terminal_key;
+
+    int fds[2]{};
+    SPAGYRIST_CHECK(pipe(fds) == 0);
+    const char lead = '\xe3';
+    SPAGYRIST_CHECK(write(fds[1], &lead, 1) == 1);
+
+    std::thread writer{[write_fd = fds[1]] {
+        std::this_thread::sleep_for(std::chrono::milliseconds{20});
+        constexpr std::string_view rest{"\x81\x82"};
+        static_cast<void>(write(write_fd, rest.data(), rest.size()));
+        close(write_fd);
+    }};
+
+    const auto read = spagyrist::detail::read_terminal_input(fds[0]);
+    close(fds[0]);
+    writer.join();
+
+    SPAGYRIST_CHECK(read.key == terminal_key::character);
+    SPAGYRIST_CHECK(read.value == "\xe3\x81\x82");
+}
+
 void terminal_input_handles_incomplete_utf8_from_fd()
 {
     using spagyrist::detail::terminal_key;
@@ -196,6 +222,7 @@ void run_terminal_tests()
     terminal_input_parses_utf8_characters();
     terminal_input_rejects_invalid_utf8();
     terminal_input_reads_utf8_from_fd();
+    terminal_input_reads_delayed_utf8_continuation_bytes();
     terminal_input_handles_incomplete_utf8_from_fd();
     terminal_input_reads_single_escape_as_escape();
 }

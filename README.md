@@ -172,9 +172,11 @@ Built-in selector keys:
 - Enter: confirm selection
 - Escape / Ctrl-C / EOF: cancel
 
-Unicode handling is byte-based and preserves UTF-8 strings. Grapheme-aware
-cursor movement, full-width character measurement, and Unicode normalization
-are outside the initial implementation scope.
+Unicode handling is byte-based and preserves UTF-8 strings. The built-in
+selector appends structurally complete UTF-8 byte sequences to the query as one
+character input and does not treat incomplete UTF-8 input as text.
+Grapheme-aware cursor movement, full-width character measurement, and Unicode
+normalization are outside the initial implementation scope.
 
 ## Candidate Text
 
@@ -191,6 +193,12 @@ be used for terminal display and search.
 ANSI decoration is applied after safe display truncation. Library-generated
 ANSI sequences are not truncated in the middle, and color output is reset by
 the end of each rendered line.
+The built-in selector maps matcher byte positions back to UTF-8 code point
+units in the display string before highlighting. Multiple matched bytes inside
+the same code point are highlighted once. Invalid UTF-8 candidate text does not
+crash rendering; structurally unreadable byte sequences are treated as
+single-byte units. Display width limits are byte-based and do not fully account
+for terminal cell width of wide characters.
 
 When `candidate.preview` is present, the fzf selector converts it into a form
 that can be passed to fzf preview. Missing previews are ignored. The built-in
@@ -211,6 +219,11 @@ The current matcher is a greedy subsequence matcher.
 
 This keeps abbreviation search useful for long paths and function names while
 ranking closer and more consecutive matches higher.
+
+`match_result::positions` contains byte offsets in the candidate string.
+`ranked_candidate::search_positions` contains byte offsets in
+`candidate_text::search`, while `ranked_candidate::display_positions` contains
+byte offsets in `candidate_text::display`.
 
 ## License
 

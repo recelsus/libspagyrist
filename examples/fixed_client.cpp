@@ -163,6 +163,72 @@ std::vector<fixture_item> fixtures()
             }),
     });
 
+    auto nihongo = make_candidate(
+        "nihongo",
+        "日本語",
+        "言語",
+        "UTF-8入力、検索、強調表示を確認するための日本語fixtureです。",
+        "https://example.test/ja/nihongo");
+    nihongo.preview =
+        "日本語\n"
+        "\n"
+        "言語\n"
+        "built-in selectorとfzf selectorで日本語の候補表示とpreviewを確認するための項目です。";
+    output.push_back(fixture_item{
+        .candidate = nihongo,
+        .document = make_document(
+            nihongo,
+            "ja",
+            {
+                "日本語は固定クライアントでUTF-8の検索と強調表示を確認するための項目です。",
+                "ひらがな、カタカナ、漢字を含む短い本文として用意しています。",
+            }),
+    });
+
+    auto tokyo = make_candidate(
+        "tokyo",
+        "東京",
+        "都市",
+        "日本の都市名を使った検索候補です。",
+        "https://example.test/ja/tokyo");
+    tokyo.preview =
+        "東京\n"
+        "\n"
+        "都市\n"
+        "漢字2文字の検索、表示、選択結果を確認するためのfixtureです。";
+    output.push_back(fixture_item{
+        .candidate = tokyo,
+        .document = make_document(
+            tokyo,
+            "ja",
+            {
+                "東京は日本語候補の短いタイトルを確認するための固定データです。",
+                "検索語として東京、都市、日本などを試せます。",
+            }),
+    });
+
+    auto sushi = make_candidate(
+        "sushi",
+        "すし",
+        "料理",
+        "ひらがなの候補と説明文を確認するための項目です。",
+        "https://example.test/ja/sushi");
+    sushi.preview =
+        "すし\n"
+        "\n"
+        "料理\n"
+        "ひらがな入力と日本語previewの表示確認に使います。";
+    output.push_back(fixture_item{
+        .candidate = sushi,
+        .document = make_document(
+            sushi,
+            "ja",
+            {
+                "すしはひらがなの検索候補として追加した固定データです。",
+                "日本語の短い語句が候補一覧と本文で崩れないかを確認できます。",
+            }),
+    });
+
     return output;
 }
 

@@ -27,7 +27,7 @@ std::size_t utf8_code_point_length(unsigned char lead) noexcept
     return 0;
 }
 
-bool is_complete_utf8_code_point(std::string_view value) noexcept
+bool is_structural_utf8_byte_sequence(std::string_view value) noexcept
 {
     if (value.empty()) {
         return false;

@@ -59,6 +59,24 @@ std::optional<char> read_byte_with_timeout(int fd, long timeout_usec)
     }
 }
 
+std::optional<char> read_byte_blocking(int fd)
+{
+    char ch{};
+    while (true) {
+        const auto count = read(fd, &ch, 1);
+        if (count < 0) {
+            if (errno == EINTR) {
+                continue;
+            }
+            throw std::runtime_error(errno_message("read failed"));
+        }
+        if (count == 0) {
+            return std::nullopt;
+        }
+        return ch;
+    }
+}
+
 } // namespace
 
 raw_terminal_mode::raw_terminal_mode(int fd)
@@ -196,7 +214,7 @@ terminal_input parse_terminal_input(std::string_view input) noexcept
         }
         return terminal_input{.key = terminal_key::unknown};
     }
-    if (first >= 0x20 && is_complete_utf8_code_point(input)) {
+    if (first >= 0x20 && is_structural_utf8_byte_sequence(input)) {
         return terminal_input{.key = terminal_key::character, .value = std::string{input}};
     }
     return terminal_input{.key = terminal_key::unknown};
@@ -204,20 +222,11 @@ terminal_input parse_terminal_input(std::string_view input) noexcept
 
 terminal_input read_terminal_input(int fd)
 {
-    char ch{};
-    while (true) {
-        const auto count = read(fd, &ch, 1);
-        if (count < 0) {
-            if (errno == EINTR) {
-                continue;
-            }
-            throw std::runtime_error(errno_message("read failed"));
-        }
-        if (count == 0) {
-            return terminal_input{.key = terminal_key::end_of_input};
-        }
-        break;
+    const auto first_byte = read_byte_blocking(fd);
+    if (!first_byte) {
+        return terminal_input{.key = terminal_key::end_of_input};
     }
+    const auto ch = *first_byte;
 
     if (ch != '\x1b') {
         std::string sequence;
@@ -227,7 +236,7 @@ terminal_input read_terminal_input(int fd)
             return terminal_input{.key = terminal_key::unknown};
         }
         for (std::size_t i = 1; i < length; ++i) {
-            const auto next = read_byte_with_timeout(fd, 10000);
+            const auto next = read_byte_blocking(fd);
             if (!next) {
                 return terminal_input{.key = terminal_key::unknown};
             }

@@ -23,11 +23,10 @@ rank_candidates(
         output.push_back(ranked_candidate{
             .index = candidate.index,
             .score = matched.score,
-            .search_positions = matched.positions,
+            .search_positions = std::move(matched.positions),
             .display_positions = display_matched.matched
                 ? std::move(display_matched.positions)
                 : std::vector<std::size_t>{},
-            .positions = std::move(matched.positions),
         });
     }
 

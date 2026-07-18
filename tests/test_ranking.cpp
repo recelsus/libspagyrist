@@ -75,7 +75,6 @@ void ranking_preserves_match_positions()
     const auto ranked = spagyrist::rank_candidates("lx", projected);
 
     SPAGYRIST_CHECK(ranked.size() == 1);
-    SPAGYRIST_CHECK(ranked[0].positions == std::vector<std::size_t>({0, 4}));
     SPAGYRIST_CHECK(ranked[0].search_positions == std::vector<std::size_t>({0, 4}));
     SPAGYRIST_CHECK(ranked[0].display_positions == std::vector<std::size_t>({0, 4}));
 }

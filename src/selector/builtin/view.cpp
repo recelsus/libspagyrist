@@ -47,11 +47,25 @@ std::vector<std::size_t> visible_positions(
     std::vector<std::size_t> output;
     for (const auto position : positions) {
         if (position >= matched_prefix_size) {
-            break;
+            continue;
         }
         output.push_back(position);
     }
+    std::sort(output.begin(), output.end());
+    output.erase(std::unique(output.begin(), output.end()), output.end());
     return output;
+}
+
+std::size_t display_unit_size(std::string_view display, std::size_t offset) noexcept
+{
+    const auto length = utf8_code_point_length(static_cast<unsigned char>(display[offset]));
+    if (length == 0 || offset + length > display.size()) {
+        return 1;
+    }
+    if (!is_structural_utf8_byte_sequence(display.substr(offset, length))) {
+        return 1;
+    }
+    return length;
 }
 
 std::string highlighted_display(
@@ -61,26 +75,30 @@ std::string highlighted_display(
 {
     std::string output;
     std::size_t position_index = 0;
-    for (std::size_t i = 0; i < display.size(); ++i) {
+    for (std::size_t i = 0; i < display.size();) {
+        const auto unit_size = display_unit_size(display, i);
+        const auto unit_end = i + unit_size;
         while (position_index < positions.size() && positions[position_index] < i) {
             ++position_index;
         }
-        const auto matched = position_index < positions.size() && positions[position_index] == i;
+        const auto matched = position_index < positions.size() && positions[position_index] < unit_end;
         if (matched && use_color) {
             output += "\033[1m";
         } else if (matched) {
             output += '[';
         }
 
-        output += display[i];
+        output += display.substr(i, unit_size);
 
         if (matched && use_color) {
             output += "\033[0m";
-            ++position_index;
         } else if (matched) {
             output += ']';
+        }
+        while (position_index < positions.size() && positions[position_index] < unit_end) {
             ++position_index;
         }
+        i = unit_end;
     }
     if (use_color) {
         output += "\033[0m";

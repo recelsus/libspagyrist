@@ -23,10 +23,10 @@ struct ranking_options {
 struct ranked_candidate {
     std::size_t index{};
     double score{};
+    // Byte offsets matched in candidate_text::search.
     std::vector<std::size_t> search_positions;
+    // Byte offsets matched in candidate_text::display.
     std::vector<std::size_t> display_positions;
-    // Compatibility field. Positions are based on the searchable text.
-    std::vector<std::size_t> positions;
 };
 
 [[nodiscard]] std::vector<ranked_candidate>
