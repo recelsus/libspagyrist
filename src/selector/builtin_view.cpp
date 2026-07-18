@@ -2,21 +2,53 @@
 
 #include <algorithm>
 #include <string_view>
+#include <utility>
 
 namespace spagyrist::detail {
 namespace {
 
-std::string truncate_line(std::string value, std::size_t width)
+struct truncated_display {
+    std::string text;
+    std::size_t matched_prefix_size{};
+};
+
+truncated_display truncate_display(std::string_view value, std::size_t width)
 {
-    if (width == 0 || value.size() <= width) {
-        return value;
+    if (width == 0) {
+        return {};
+    }
+    if (value.size() <= width) {
+        return truncated_display{
+            .text = std::string{value},
+            .matched_prefix_size = value.size(),
+        };
     }
     if (width <= 1) {
-        return value.substr(0, width);
+        return truncated_display{
+            .text = "~",
+            .matched_prefix_size = 0,
+        };
     }
-    value.resize(width - 1);
-    value += '~';
-    return value;
+    std::string output{value.substr(0, width - 1)};
+    output += '~';
+    return truncated_display{
+        .text = std::move(output),
+        .matched_prefix_size = width - 1,
+    };
+}
+
+std::vector<std::size_t> visible_positions(
+    const std::vector<std::size_t>& positions,
+    std::size_t matched_prefix_size)
+{
+    std::vector<std::size_t> output;
+    for (const auto position : positions) {
+        if (position >= matched_prefix_size) {
+            break;
+        }
+        output.push_back(position);
+    }
+    return output;
 }
 
 std::string highlighted_display(
@@ -27,6 +59,9 @@ std::string highlighted_display(
     std::string output;
     std::size_t position_index = 0;
     for (std::size_t i = 0; i < display.size(); ++i) {
+        while (position_index < positions.size() && positions[position_index] < i) {
+            ++position_index;
+        }
         const auto matched = position_index < positions.size() && positions[position_index] == i;
         if (matched && use_color) {
             output += "\033[1m";
@@ -43,6 +78,9 @@ std::string highlighted_display(
             output += ']';
             ++position_index;
         }
+    }
+    if (use_color) {
+        output += "\033[0m";
     }
     return output;
 }
@@ -87,10 +125,14 @@ std::string render_builtin_selector_screen(
             continue;
         }
 
+        const auto content_width = options.width > 2 ? options.width - 2 : std::size_t{};
+        const auto display = truncate_display(candidate->display, content_width);
+        const auto positions = visible_positions(
+            ranked_candidate.display_positions,
+            display.matched_prefix_size);
+
         std::string line = row == state.cursor() ? "> " : "  ";
-        line += truncate_line(
-            highlighted_display(candidate->display, ranked_candidate.display_positions, options.use_color),
-            options.width > 2 ? options.width - 2 : options.width);
+        line += highlighted_display(display.text, positions, options.use_color);
         append_line(output, line);
     }
 
