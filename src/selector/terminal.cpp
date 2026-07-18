@@ -4,6 +4,7 @@
 #include <cstring>
 #include <stdexcept>
 #include <string>
+#include <sys/select.h>
 #include <sys/ioctl.h>
 #include <unistd.h>
 #include <utility>
@@ -17,6 +18,43 @@ std::string errno_message(std::string_view prefix)
     output += ": ";
     output += std::strerror(errno);
     return output;
+}
+
+std::optional<char> read_byte_with_timeout(int fd, long timeout_usec)
+{
+    while (true) {
+        fd_set read_set;
+        FD_ZERO(&read_set);
+        FD_SET(fd, &read_set);
+
+        timeval timeout{};
+        timeout.tv_sec = 0;
+        timeout.tv_usec = timeout_usec;
+
+        const auto ready = select(fd + 1, &read_set, nullptr, nullptr, &timeout);
+        if (ready < 0) {
+            if (errno == EINTR) {
+                continue;
+            }
+            throw std::runtime_error(errno_message("select failed"));
+        }
+        if (ready == 0) {
+            return std::nullopt;
+        }
+
+        char ch{};
+        const auto count = read(fd, &ch, 1);
+        if (count < 0) {
+            if (errno == EINTR) {
+                continue;
+            }
+            throw std::runtime_error(errno_message("read failed"));
+        }
+        if (count == 0) {
+            return std::nullopt;
+        }
+        return ch;
+    }
 }
 
 } // namespace
@@ -132,6 +170,12 @@ terminal_input parse_terminal_input(std::string_view input) noexcept
     if (first == 0x03) {
         return terminal_input{.key = terminal_key::ctrl_c};
     }
+    if (first == 0x0e) {
+        return terminal_input{.key = terminal_key::ctrl_n};
+    }
+    if (first == 0x10) {
+        return terminal_input{.key = terminal_key::ctrl_p};
+    }
     if (first == '\r' || first == '\n') {
         return terminal_input{.key = terminal_key::enter};
     }
@@ -179,10 +223,11 @@ terminal_input read_terminal_input(int fd)
 
     char sequence[3]{ch, 0, 0};
     for (std::size_t i = 1; i < 3; ++i) {
-        const auto count = read(fd, &sequence[i], 1);
-        if (count <= 0) {
+        const auto next = read_byte_with_timeout(fd, 10000);
+        if (!next) {
             return parse_terminal_input(std::string_view{sequence, i});
         }
+        sequence[i] = *next;
     }
     return parse_terminal_input(std::string_view{sequence, 3});
 }

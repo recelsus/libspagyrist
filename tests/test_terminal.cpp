@@ -35,6 +35,8 @@ void terminal_input_parses_basic_keys()
     SPAGYRIST_CHECK(spagyrist::detail::parse_terminal_input("\n").key == terminal_key::enter);
     SPAGYRIST_CHECK(spagyrist::detail::parse_terminal_input("\177").key == terminal_key::backspace);
     SPAGYRIST_CHECK(spagyrist::detail::parse_terminal_input("\003").key == terminal_key::ctrl_c);
+    SPAGYRIST_CHECK(spagyrist::detail::parse_terminal_input("\016").key == terminal_key::ctrl_n);
+    SPAGYRIST_CHECK(spagyrist::detail::parse_terminal_input("\020").key == terminal_key::ctrl_p);
     SPAGYRIST_CHECK(spagyrist::detail::parse_terminal_input("\033").key == terminal_key::escape);
 }
 
@@ -64,6 +66,22 @@ void terminal_input_reads_from_fd()
     SPAGYRIST_CHECK(read.value == 'x');
 }
 
+void terminal_input_reads_single_escape_as_escape()
+{
+    using spagyrist::detail::terminal_key;
+
+    int fds[2]{};
+    SPAGYRIST_CHECK(pipe(fds) == 0);
+    const char input = '\033';
+    SPAGYRIST_CHECK(write(fds[1], &input, 1) == 1);
+    close(fds[1]);
+
+    const auto read = spagyrist::detail::read_terminal_input(fds[0]);
+    close(fds[0]);
+
+    SPAGYRIST_CHECK(read.key == terminal_key::escape);
+}
+
 } // namespace
 
 void run_terminal_tests()
@@ -74,4 +92,5 @@ void run_terminal_tests()
     terminal_input_parses_basic_keys();
     terminal_input_parses_arrow_keys();
     terminal_input_reads_from_fd();
+    terminal_input_reads_single_escape_as_escape();
 }

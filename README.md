@@ -53,6 +53,16 @@ make
 ctest --output-on-failure
 ```
 
+When building libspagyrist as the top-level project, a small fixed-data client
+is also built for quick manual checks. It is disabled by default when
+libspagyrist is used as a subproject.
+
+```sh
+./build/examples/spagyrist_fixed_client --list
+./build/examples/spagyrist_fixed_client --select first --format plain
+printf '2\n' | ./build/examples/spagyrist_fixed_client --select number --format markdown
+```
+
 ## Install
 
 ```sh
@@ -142,7 +152,7 @@ Built-in selector keys:
 
 - Text input: update the search query
 - Backspace: delete a character
-- Up / Down: move the current selection
+- Up / Down or Ctrl-P / Ctrl-N: move the current selection
 - Enter: confirm selection
 - Escape / Ctrl-C / EOF: cancel
 

@@ -15,19 +15,20 @@
 namespace spagyrist {
 namespace {
 
-class cursor_guard {
+class screen_guard {
 public:
-    explicit cursor_guard(int fd)
+    explicit screen_guard(int fd)
         : fd_(fd)
     {
+        write_all("\033[?1049h\033[?25l");
     }
 
-    cursor_guard(const cursor_guard&) = delete;
-    cursor_guard& operator=(const cursor_guard&) = delete;
+    screen_guard(const screen_guard&) = delete;
+    screen_guard& operator=(const screen_guard&) = delete;
 
-    ~cursor_guard()
+    ~screen_guard()
     {
-        write_all("\033[?25h");
+        write_all("\033[?25h\033[?1049l");
     }
 
     void write_all(std::string_view value) const noexcept
@@ -98,7 +99,7 @@ builtin_selector::select(std::span<const candidate> candidates)
         throw std::runtime_error(mode.error().empty() ? "failed to enable raw terminal mode" : mode.error());
     }
 
-    const cursor_guard cursor{STDOUT_FILENO};
+    const screen_guard screen{STDOUT_FILENO};
     while (true) {
         detail::builtin_selector_view_options view_options;
         view_options.use_color = options_.use_color;

@@ -12,6 +12,12 @@ include(GNUInstallDirs)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 option(SPAGYRIST_BUILD_TESTS "Build Spagyrist tests" ON)
+if(CMAKE_SOURCE_DIR STREQUAL PROJECT_SOURCE_DIR)
+  set(SPAGYRIST_BUILD_EXAMPLES_DEFAULT ON)
+else()
+  set(SPAGYRIST_BUILD_EXAMPLES_DEFAULT OFF)
+endif()
+option(SPAGYRIST_BUILD_EXAMPLES "Build Spagyrist example clients" ${SPAGYRIST_BUILD_EXAMPLES_DEFAULT})
 
 add_library(spagyrist STATIC
   src/candidate.cpp
@@ -99,4 +105,8 @@ install(
 if(SPAGYRIST_BUILD_TESTS)
   enable_testing()
   add_subdirectory(tests)
+endif()
+
+if(SPAGYRIST_BUILD_EXAMPLES)
+  add_subdirectory(examples)
 endif()

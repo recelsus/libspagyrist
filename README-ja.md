@@ -50,6 +50,15 @@ make
 ctest --output-on-failure
 ```
 
+トップレベルでビルドする場合、簡易動作確認用の固定 client も作成されます。
+サブプロジェクトとして利用する場合はデフォルトで無効です。
+
+```sh
+./build/examples/spagyrist_fixed_client --list
+./build/examples/spagyrist_fixed_client --select first --format plain
+printf '2\n' | ./build/examples/spagyrist_fixed_client --select number --format markdown
+```
+
 ## Install
 
 ```sh
@@ -135,7 +144,7 @@ auto selected = spagyrist::select_candidate_with_fallback(
 
 - 文字入力: 検索 query を更新
 - Backspace: 文字削除
-- Up / Down: 候補移動
+- Up / Down または Ctrl-P / Ctrl-N: 候補移動
 - Enter: 選択確定
 - Escape / Ctrl-C / EOF: キャンセル
 

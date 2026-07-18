@@ -37,6 +37,7 @@ void builtin_view_renders_query_count_and_selection()
     SPAGYRIST_CHECK(screen.find(">  (3)") != std::string::npos);
     SPAGYRIST_CHECK(screen.find("> Linux") != std::string::npos);
     SPAGYRIST_CHECK(screen.find("  Linux kernel") != std::string::npos);
+    SPAGYRIST_CHECK(screen.find("\r\n> Linux\r\n") != std::string::npos);
 }
 
 void builtin_view_highlights_matches_without_color()

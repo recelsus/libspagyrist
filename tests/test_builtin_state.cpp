@@ -77,6 +77,22 @@ void builtin_state_moves_selection()
     SPAGYRIST_CHECK(state.selected_candidate_index() == 0);
 }
 
+void builtin_state_moves_selection_with_ctrl_n_and_ctrl_p()
+{
+    const auto projected = projected_candidates();
+    spagyrist::detail::builtin_selector_state state{projected};
+
+    state.handle({.key = spagyrist::detail::terminal_key::ctrl_n});
+
+    SPAGYRIST_CHECK(state.cursor() == 1);
+    SPAGYRIST_CHECK(state.selected_candidate_index() == 1);
+
+    state.handle({.key = spagyrist::detail::terminal_key::ctrl_p});
+
+    SPAGYRIST_CHECK(state.cursor() == 0);
+    SPAGYRIST_CHECK(state.selected_candidate_index() == 0);
+}
+
 void builtin_state_enter_selects_when_candidate_exists()
 {
     const auto projected = projected_candidates();
@@ -133,6 +149,7 @@ void run_builtin_state_tests()
     builtin_state_filters_when_typing();
     builtin_state_backspace_updates_query_and_results();
     builtin_state_moves_selection();
+    builtin_state_moves_selection_with_ctrl_n_and_ctrl_p();
     builtin_state_enter_selects_when_candidate_exists();
     builtin_state_enter_keeps_editing_when_no_result_exists();
     builtin_state_cancel_keys_cancel();

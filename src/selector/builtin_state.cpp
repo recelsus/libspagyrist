@@ -64,9 +64,11 @@ builtin_selector_action builtin_selector_state::handle(terminal_input input)
         }
         return builtin_selector_action::editing;
     case terminal_key::arrow_up:
+    case terminal_key::ctrl_p:
         move_up();
         return builtin_selector_action::editing;
     case terminal_key::arrow_down:
+    case terminal_key::ctrl_n:
         move_down();
         return builtin_selector_action::editing;
     case terminal_key::enter:

@@ -42,6 +42,15 @@ void fuzzy_match_rejects_missing_characters()
     SPAGYRIST_CHECK(result.positions.empty());
 }
 
+void fuzzy_match_rejects_scattered_long_matches()
+{
+    const auto result = spagyrist::fuzzy_match(
+        "Apple",
+        "A research operating system from Bell Labs https://example.test/plan9");
+
+    SPAGYRIST_CHECK(!result.matched);
+}
+
 void fuzzy_match_scores_consecutive_match_higher()
 {
     const auto consecutive = spagyrist::fuzzy_match("abc", "abc");
@@ -148,6 +157,7 @@ void run_matcher_tests()
     fuzzy_match_matches_prefix();
     fuzzy_match_matches_subsequence();
     fuzzy_match_rejects_missing_characters();
+    fuzzy_match_rejects_scattered_long_matches();
     fuzzy_match_scores_consecutive_match_higher();
     fuzzy_match_scores_word_boundary_higher();
     fuzzy_match_scores_case_boundary_higher();

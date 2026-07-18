@@ -57,6 +57,12 @@ const candidate_text* find_candidate(const std::vector<candidate_text>& candidat
     return nullptr;
 }
 
+void append_line(std::string& output, std::string_view line)
+{
+    output += line;
+    output += "\r\n";
+}
+
 } // namespace
 
 std::string render_builtin_selector_screen(
@@ -69,11 +75,7 @@ std::string render_builtin_selector_screen(
         output += "\033[?25l\033[H\033[J";
     }
 
-    output += "> ";
-    output += state.query();
-    output += " (";
-    output += std::to_string(state.ranked().size());
-    output += ")\n";
+    append_line(output, "> " + state.query() + " (" + std::to_string(state.ranked().size()) + ")");
 
     const auto ranked = state.ranked();
     const auto begin = std::min(state.scroll_offset(), ranked.size());
@@ -85,15 +87,15 @@ std::string render_builtin_selector_screen(
             continue;
         }
 
-        output += row == state.cursor() ? "> " : "  ";
-        output += truncate_line(
+        std::string line = row == state.cursor() ? "> " : "  ";
+        line += truncate_line(
             highlighted_display(candidate->display, ranked_candidate.positions, options.use_color),
             options.width > 2 ? options.width - 2 : options.width);
-        output += '\n';
+        append_line(output, line);
     }
 
     if (ranked.empty()) {
-        output += "  no matches\n";
+        append_line(output, "  no matches");
     }
 
     return output;

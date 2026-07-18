@@ -16,6 +16,15 @@ spagyrist::candidate candidate_with_title(std::string title)
     return value;
 }
 
+spagyrist::candidate candidate_with_fields(std::string title, std::string subtitle, std::string description, std::string url)
+{
+    auto value = candidate_with_title(std::move(title));
+    value.subtitle = std::move(subtitle);
+    value.description = std::move(description);
+    value.url = std::move(url);
+    return value;
+}
+
 void ranking_places_higher_score_first()
 {
     std::vector<spagyrist::candidate> candidates;
@@ -94,6 +103,32 @@ void ranking_handles_empty_candidate_list()
     SPAGYRIST_CHECK(ranked.empty());
 }
 
+void ranking_filters_scattered_description_matches()
+{
+    std::vector<spagyrist::candidate> candidates;
+    candidates.push_back(candidate_with_fields(
+        "Linux",
+        "Operating system kernel",
+        "A Unix-like operating system family used across servers and devices.",
+        "https://example.test/linux"));
+    candidates.push_back(candidate_with_fields(
+        "Darwin",
+        "Apple operating system core",
+        "The open source Unix-like core used by Apple's operating systems.",
+        "https://example.test/darwin"));
+    candidates.push_back(candidate_with_fields(
+        "Plan 9",
+        "Distributed operating system",
+        "A research operating system from Bell Labs.",
+        "https://example.test/plan9"));
+
+    const auto projected = spagyrist::project_candidate_texts(candidates);
+    const auto ranked = spagyrist::rank_candidates("Apple", projected);
+
+    SPAGYRIST_CHECK(ranked.size() == 1);
+    SPAGYRIST_CHECK(ranked[0].index == 1);
+}
+
 } // namespace
 
 void run_ranking_tests()
@@ -104,4 +139,5 @@ void run_ranking_tests()
     ranking_preserves_match_positions();
     ranking_can_keep_input_order();
     ranking_handles_empty_candidate_list();
+    ranking_filters_scattered_description_matches();
 }

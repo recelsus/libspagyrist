@@ -123,6 +123,17 @@ double score_match(std::string_view query, std::string_view candidate, const std
     return score;
 }
 
+bool is_coherent_match(std::string_view query, const std::vector<std::size_t>& positions)
+{
+    if (query.size() <= 2 || positions.size() <= 1) {
+        return true;
+    }
+
+    const auto span = positions.back() - positions.front() + 1;
+    const auto max_span = query.size() * 3;
+    return span <= max_span;
+}
+
 } // namespace
 
 match_result
@@ -161,6 +172,10 @@ fuzzy_match(
         if (!found) {
             return match_result{};
         }
+    }
+
+    if (!is_coherent_match(query, positions)) {
+        return match_result{};
     }
 
     return match_result{

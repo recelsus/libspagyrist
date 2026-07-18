@@ -19,6 +19,8 @@ enum class terminal_key {
     enter,
     escape,
     ctrl_c,
+    ctrl_n,
+    ctrl_p,
     arrow_up,
     arrow_down,
     unknown,
