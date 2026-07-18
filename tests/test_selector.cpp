@@ -69,6 +69,17 @@ std::vector<spagyrist::candidate> candidates()
     return {linux_candidate, kernel};
 }
 
+std::filesystem::path write_executable_script(std::string name, std::string content)
+{
+    const auto script = std::filesystem::temp_directory_path() / std::move(name);
+    {
+        std::ofstream file(script);
+        file << content;
+    }
+    chmod(script.c_str(), 0700);
+    return script;
+}
+
 void selector_result_maps_index_to_candidate()
 {
     auto values = candidates();
@@ -208,16 +219,69 @@ void number_selector_eof_cancels()
     SPAGYRIST_CHECK(!selected.has_value());
 }
 
+void number_selector_result_reports_selection()
+{
+    auto values = candidates();
+    std::istringstream input{"2\n"};
+    std::ostringstream output;
+    spagyrist::number_selector selector{{.input = &input, .output = &output}};
+
+    const auto selected = spagyrist::select_candidate_result(selector, values);
+
+    SPAGYRIST_CHECK(selected.status == spagyrist::selector_status::selected);
+    SPAGYRIST_CHECK(selected.selected.has_value());
+    SPAGYRIST_CHECK(selected.selected->index == 1);
+}
+
+void number_selector_result_reports_eof_as_cancelled()
+{
+    auto values = candidates();
+    std::istringstream input;
+    std::ostringstream output;
+    spagyrist::number_selector selector{{.input = &input, .output = &output}};
+
+    const auto selected = spagyrist::select_candidate_result(selector, values);
+
+    SPAGYRIST_CHECK(selected.status == spagyrist::selector_status::cancelled);
+    SPAGYRIST_CHECK(!selected.selected.has_value());
+}
+
+void number_selector_result_retries_invalid_and_out_of_range_input()
+{
+    auto values = candidates();
+    std::istringstream input{"abc\n9\n1\n"};
+    std::ostringstream output;
+    spagyrist::number_selector selector{{.input = &input, .output = &output}};
+
+    const auto selected = spagyrist::select_candidate_result(selector, values);
+
+    SPAGYRIST_CHECK(selected.status == spagyrist::selector_status::selected);
+    SPAGYRIST_CHECK(selected.selected.has_value());
+    SPAGYRIST_CHECK(selected.selected->index == 0);
+    SPAGYRIST_CHECK(output.str().find("Enter a number between 1 and 2.") != std::string::npos);
+    SPAGYRIST_CHECK(output.str().find("Selection out of range. Maximum is 2.") != std::string::npos);
+}
+
+void number_selector_result_reports_empty_candidates_as_no_selection()
+{
+    std::vector<spagyrist::candidate> values;
+    std::istringstream input{"1\n"};
+    std::ostringstream output;
+    spagyrist::number_selector selector{{.input = &input, .output = &output}};
+
+    const auto selected = spagyrist::select_candidate_result(selector, values);
+
+    SPAGYRIST_CHECK(selected.status == spagyrist::selector_status::no_selection);
+    SPAGYRIST_CHECK(!selected.selected.has_value());
+}
+
 void fzf_selector_uses_external_process_even_for_one_candidate()
 {
-    const auto script = std::filesystem::temp_directory_path() / "spagyrist-fake-fzf.sh";
-    {
-        std::ofstream file(script);
-        file << "#!/bin/sh\n";
-        file << "cat >/tmp/spagyrist-fake-fzf-input\n";
-        file << "head -n 1 /tmp/spagyrist-fake-fzf-input\n";
-    }
-    chmod(script.c_str(), 0700);
+    const auto script = write_executable_script(
+        "spagyrist-fake-fzf.sh",
+        "#!/bin/sh\n"
+        "cat >/tmp/spagyrist-fake-fzf-input\n"
+        "head -n 1 /tmp/spagyrist-fake-fzf-input\n");
 
     std::vector<spagyrist::candidate> values;
     spagyrist::candidate only;
@@ -260,14 +324,11 @@ void fzf_selector_result_reports_missing_executable_as_unavailable()
 
 void fzf_selector_result_reports_out_of_range_index()
 {
-    const auto script = std::filesystem::temp_directory_path() / "spagyrist-fake-fzf-out-of-range.sh";
-    {
-        std::ofstream file(script);
-        file << "#!/bin/sh\n";
-        file << "cat >/dev/null\n";
-        file << "printf '99\\tmissing\\n'\n";
-    }
-    chmod(script.c_str(), 0700);
+    const auto script = write_executable_script(
+        "spagyrist-fake-fzf-out-of-range.sh",
+        "#!/bin/sh\n"
+        "cat >/dev/null\n"
+        "printf '99\\tmissing\\n'\n");
 
     auto values = candidates();
     spagyrist::fzf_selector_options options;
@@ -283,14 +344,11 @@ void fzf_selector_result_reports_out_of_range_index()
 
 void fzf_selector_result_reports_invalid_output_as_error()
 {
-    const auto script = std::filesystem::temp_directory_path() / "spagyrist-fake-fzf-invalid-output.sh";
-    {
-        std::ofstream file(script);
-        file << "#!/bin/sh\n";
-        file << "cat >/dev/null\n";
-        file << "printf 'not-an-index\\n'\n";
-    }
-    chmod(script.c_str(), 0700);
+    const auto script = write_executable_script(
+        "spagyrist-fake-fzf-invalid-output.sh",
+        "#!/bin/sh\n"
+        "cat >/dev/null\n"
+        "printf 'not-an-index\\n'\n");
 
     auto values = candidates();
     spagyrist::fzf_selector_options options;
@@ -300,6 +358,48 @@ void fzf_selector_result_reports_invalid_output_as_error()
     const auto selected = spagyrist::select_candidate_result(selector, values);
 
     SPAGYRIST_CHECK(selected.status == spagyrist::selector_status::error);
+    SPAGYRIST_CHECK(!selected.selected.has_value());
+    std::filesystem::remove(script);
+}
+
+void fzf_selector_result_reports_cancelled_exit()
+{
+    const auto script = write_executable_script(
+        "spagyrist-fake-fzf-cancel.sh",
+        "#!/bin/sh\n"
+        "cat >/dev/null\n"
+        "exit 130\n");
+
+    auto values = candidates();
+    spagyrist::fzf_selector_options options;
+    options.executable = script.string();
+    spagyrist::fzf_selector selector{options};
+
+    const auto selected = spagyrist::select_candidate_result(selector, values);
+
+    SPAGYRIST_CHECK(selected.status == spagyrist::selector_status::cancelled);
+    SPAGYRIST_CHECK(!selected.selected.has_value());
+    std::filesystem::remove(script);
+}
+
+void fzf_selector_result_reports_abnormal_exit_as_error()
+{
+    const auto script = write_executable_script(
+        "spagyrist-fake-fzf-error.sh",
+        "#!/bin/sh\n"
+        "cat >/dev/null\n"
+        "printf 'boom\\n' >&2\n"
+        "exit 2\n");
+
+    auto values = candidates();
+    spagyrist::fzf_selector_options options;
+    options.executable = script.string();
+    spagyrist::fzf_selector selector{options};
+
+    const auto selected = spagyrist::select_candidate_result(selector, values);
+
+    SPAGYRIST_CHECK(selected.status == spagyrist::selector_status::error);
+    SPAGYRIST_CHECK(selected.message.find("boom") != std::string::npos);
     SPAGYRIST_CHECK(!selected.selected.has_value());
     std::filesystem::remove(script);
 }
@@ -389,6 +489,17 @@ void builtin_selector_reports_unavailable_without_tty()
     SPAGYRIST_CHECK(!selected.selected.has_value());
 }
 
+void builtin_selector_result_reports_empty_candidates_as_no_selection()
+{
+    std::vector<spagyrist::candidate> values;
+    spagyrist::builtin_selector selector;
+
+    const auto selected = spagyrist::select_candidate_result(selector, values);
+
+    SPAGYRIST_CHECK(selected.status == spagyrist::selector_status::no_selection);
+    SPAGYRIST_CHECK(!selected.selected.has_value());
+}
+
 void auto_selector_falls_back_to_number_without_tty()
 {
     auto values = candidates();
@@ -426,16 +537,23 @@ void run_selector_tests()
     number_selector_invalid_input_retries();
     number_selector_out_of_range_retries_and_shows_maximum();
     number_selector_eof_cancels();
+    number_selector_result_reports_selection();
+    number_selector_result_reports_eof_as_cancelled();
+    number_selector_result_retries_invalid_and_out_of_range_input();
+    number_selector_result_reports_empty_candidates_as_no_selection();
     fzf_selector_uses_external_process_even_for_one_candidate();
     fzf_selector_reports_missing_executable();
     fzf_selector_result_reports_missing_executable_as_unavailable();
     fzf_selector_result_reports_out_of_range_index();
     fzf_selector_result_reports_invalid_output_as_error();
+    fzf_selector_result_reports_cancelled_exit();
+    fzf_selector_result_reports_abnormal_exit_as_error();
     selector_fallback_uses_fallback_when_fzf_is_missing();
     selector_fallback_uses_fallback_when_primary_is_unavailable();
     selector_fallback_uses_fallback_when_primary_throws();
     selector_fallback_does_not_fallback_when_primary_cancels();
     selector_fallback_does_not_fallback_when_primary_returns_invalid_index();
     builtin_selector_reports_unavailable_without_tty();
+    builtin_selector_result_reports_empty_candidates_as_no_selection();
     auto_selector_falls_back_to_number_without_tty();
 }
