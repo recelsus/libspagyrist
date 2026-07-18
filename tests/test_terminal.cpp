@@ -2,6 +2,8 @@
 
 #include "test_support.hpp"
 
+#include <stdexcept>
+#include <string>
 #include <string_view>
 #include <unistd.h>
 
@@ -25,6 +27,44 @@ void raw_terminal_mode_does_not_throw_for_invalid_fd()
 
     SPAGYRIST_CHECK(!mode.enabled());
     SPAGYRIST_CHECK(!mode.error().empty());
+}
+
+void terminal_screen_guard_reports_invalid_fd()
+{
+    spagyrist::detail::terminal_screen_guard screen{-1};
+
+    SPAGYRIST_CHECK(!screen.enabled());
+    SPAGYRIST_CHECK(!screen.error().empty());
+}
+
+void terminal_write_all_writes_complete_value()
+{
+    int fds[2]{};
+    SPAGYRIST_CHECK(pipe(fds) == 0);
+
+    spagyrist::detail::write_terminal_all(fds[1], "hello");
+    close(fds[1]);
+
+    char buffer[8]{};
+    const auto read_size = read(fds[0], buffer, sizeof(buffer));
+    close(fds[0]);
+
+    const auto output = std::string{buffer, static_cast<std::size_t>(read_size)};
+    SPAGYRIST_CHECK(read_size == 5);
+    SPAGYRIST_CHECK(output == "hello");
+}
+
+void terminal_write_all_reports_invalid_fd()
+{
+    bool threw = false;
+    try {
+        spagyrist::detail::write_terminal_all(-1, "x");
+    } catch (const std::runtime_error&) {
+        threw = true;
+    }
+
+    SPAGYRIST_CHECK(threw);
+    SPAGYRIST_CHECK(!spagyrist::detail::try_write_terminal_all(-1, "x"));
 }
 
 void terminal_input_parses_basic_keys()
@@ -147,6 +187,9 @@ void run_terminal_tests()
     terminal_reports_invalid_fd_as_not_tty();
     terminal_size_returns_empty_for_invalid_fd();
     raw_terminal_mode_does_not_throw_for_invalid_fd();
+    terminal_screen_guard_reports_invalid_fd();
+    terminal_write_all_writes_complete_value();
+    terminal_write_all_reports_invalid_fd();
     terminal_input_parses_basic_keys();
     terminal_input_parses_arrow_keys();
     terminal_input_reads_from_fd();

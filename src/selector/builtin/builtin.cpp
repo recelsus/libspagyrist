@@ -6,61 +6,9 @@
 #include "terminal.hpp"
 
 #include <algorithm>
-#include <cerrno>
-#include <cstring>
-#include <stdexcept>
-#include <string_view>
 #include <unistd.h>
 
 namespace spagyrist {
-namespace {
-
-class screen_guard {
-public:
-    explicit screen_guard(int fd)
-        : fd_(fd)
-    {
-        write_all("\033[?1049h\033[?25l");
-    }
-
-    screen_guard(const screen_guard&) = delete;
-    screen_guard& operator=(const screen_guard&) = delete;
-
-    ~screen_guard()
-    {
-        write_all("\033[?25h\033[?1049l");
-    }
-
-    void write_all(std::string_view value) const noexcept
-    {
-        while (!value.empty()) {
-            const auto written = write(fd_, value.data(), value.size());
-            if (written <= 0) {
-                return;
-            }
-            value.remove_prefix(static_cast<std::size_t>(written));
-        }
-    }
-
-private:
-    int fd_;
-};
-
-void write_terminal(int fd, std::string_view value)
-{
-    while (!value.empty()) {
-        const auto written = write(fd, value.data(), value.size());
-        if (written < 0) {
-            if (errno == EINTR) {
-                continue;
-            }
-            throw std::runtime_error(std::string{"terminal write failed: "} + std::strerror(errno));
-        }
-        value.remove_prefix(static_cast<std::size_t>(written));
-    }
-}
-
-} // namespace
 
 builtin_selector::builtin_selector(builtin_selector_options options)
     : options_(options)
@@ -110,14 +58,17 @@ builtin_selector::select_result(std::span<const candidate> candidates)
             return selector_result::error(mode.error().empty() ? "failed to enable raw terminal mode" : mode.error());
         }
 
-        const screen_guard screen{STDOUT_FILENO};
+        const detail::terminal_screen_guard screen{STDOUT_FILENO};
+        if (!screen.enabled()) {
+            return selector_result::error(screen.error().empty() ? "failed to initialize terminal screen" : screen.error());
+        }
         while (true) {
             detail::builtin_selector_view_options view_options;
             view_options.use_color = options_.use_color;
             if (const auto terminal_size = detail::query_terminal_size(STDOUT_FILENO)) {
                 view_options.width = terminal_size->columns;
             }
-            write_terminal(STDOUT_FILENO, detail::render_builtin_selector_screen(state, projected, view_options));
+            detail::write_terminal_all(STDOUT_FILENO, detail::render_builtin_selector_screen(state, projected, view_options));
 
             const auto action = state.handle(detail::read_terminal_input(STDIN_FILENO));
             if (action == detail::builtin_selector_action::cancelled) {

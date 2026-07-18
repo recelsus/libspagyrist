@@ -56,8 +56,29 @@ private:
     termios original_{};
 };
 
+class terminal_screen_guard {
+public:
+    explicit terminal_screen_guard(int fd);
+
+    terminal_screen_guard(const terminal_screen_guard&) = delete;
+    terminal_screen_guard& operator=(const terminal_screen_guard&) = delete;
+
+    ~terminal_screen_guard();
+
+    [[nodiscard]] bool enabled() const noexcept;
+    [[nodiscard]] const std::string& error() const noexcept;
+
+private:
+    int fd_{-1};
+    bool screen_enabled_{false};
+    bool cursor_hidden_{false};
+    std::string error_;
+};
+
 [[nodiscard]] bool is_terminal(int fd) noexcept;
 [[nodiscard]] std::optional<terminal_size> query_terminal_size(int fd) noexcept;
+void write_terminal_all(int fd, std::string_view value);
+[[nodiscard]] bool try_write_terminal_all(int fd, std::string_view value) noexcept;
 [[nodiscard]] terminal_input parse_terminal_input(std::string_view input) noexcept;
 [[nodiscard]] terminal_input read_terminal_input(int fd);
 
