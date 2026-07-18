@@ -54,6 +54,18 @@ void fuzzy_match_keeps_scattered_long_matches_with_lower_score()
     SPAGYRIST_CHECK(close.score > scattered.score);
 }
 
+void fuzzy_match_can_reject_scattered_long_matches()
+{
+    spagyrist::match_options options;
+    options.reject_scattered_long_matches = true;
+    const auto result = spagyrist::fuzzy_match(
+        "linux",
+        "Darwin Apple operating system core The open source Unix-like core used by Apple's operating systems.",
+        options);
+
+    SPAGYRIST_CHECK(!result.matched);
+}
+
 void fuzzy_match_allows_long_candidate_abbreviation()
 {
     const auto result = spagyrist::fuzzy_match(
@@ -171,6 +183,7 @@ void run_matcher_tests()
     fuzzy_match_matches_subsequence();
     fuzzy_match_rejects_missing_characters();
     fuzzy_match_keeps_scattered_long_matches_with_lower_score();
+    fuzzy_match_can_reject_scattered_long_matches();
     fuzzy_match_allows_long_candidate_abbreviation();
     fuzzy_match_scores_consecutive_match_higher();
     fuzzy_match_scores_word_boundary_higher();

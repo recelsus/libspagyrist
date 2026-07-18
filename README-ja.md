@@ -56,6 +56,7 @@ ctest --output-on-failure
 ```sh
 ./build/examples/spagyrist_fixed_client --list
 ./build/examples/spagyrist_fixed_client --select first --format plain
+./build/examples/spagyrist_fixed_client --select fzf --format terminal
 printf '2\n' | ./build/examples/spagyrist_fixed_client --select number --format markdown
 ```
 
@@ -174,9 +175,15 @@ selectorで利用する表示用文字列と検索用文字列は、`candidate` 
 - 候補由来のANSIエスケープシーケンスは端末制御として扱わない
 - 検索用文字列上の一致位置と表示用文字列上の一致位置を分離
 - 説明やURLなど表示されていないフィールドだけに一致した場合、不正な強調表示を行わない
+- `candidate.preview` は任意フィールドで、preview対応selectorだけが利用する
 
 ANSI装飾は、表示文字列を安全に切り詰めた後に付与します。ライブラリが生成したANSI
 シーケンスを途中で切断せず、カラー表示時は行末までにリセットします。
+
+`candidate.preview` が存在する場合、fzf selectorはfzfのpreviewへ渡せる形式に変換します。
+previewが存在しない場合は無視されます。built-in selectorではpreview表示を行いません。
+fzf selectorでは、検索対象をfzfに表示している候補文字列へ限定し、preview本文は検索対象に含めません。
+ただし、実際のmatchingアルゴリズムはfzf側のものです。
 
 ## Matcher
 

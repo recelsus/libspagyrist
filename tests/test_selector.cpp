@@ -4,6 +4,7 @@
 
 #include <filesystem>
 #include <fstream>
+#include <iterator>
 #include <sstream>
 #include <stdexcept>
 #include <sys/stat.h>
@@ -300,6 +301,80 @@ void fzf_selector_uses_external_process_even_for_one_candidate()
     std::filesystem::remove("/tmp/spagyrist-fake-fzf-input");
 }
 
+void fzf_selector_passes_preview_when_available()
+{
+    const auto script = write_executable_script(
+        "spagyrist-fake-fzf-preview.sh",
+        "#!/bin/sh\n"
+        "printf '%s\\n' \"$@\" >/tmp/spagyrist-fake-fzf-preview-args\n"
+        "cat >/tmp/spagyrist-fake-fzf-preview-input\n"
+        "head -n 1 /tmp/spagyrist-fake-fzf-preview-input\n");
+
+    std::vector<spagyrist::candidate> values;
+    spagyrist::candidate only;
+    only.id = "Only";
+    only.title = "Only";
+    only.preview = "Line 1\nLine 2\tTabbed";
+    values.push_back(only);
+
+    spagyrist::fzf_selector_options options;
+    options.executable = script.string();
+    spagyrist::fzf_selector selector{options};
+    const auto selected = spagyrist::select_candidate(selector, values);
+
+    std::ifstream args{"/tmp/spagyrist-fake-fzf-preview-args"};
+    const std::string arg_text{
+        std::istreambuf_iterator<char>{args},
+        std::istreambuf_iterator<char>{}};
+    std::ifstream input{"/tmp/spagyrist-fake-fzf-preview-input"};
+    const std::string input_text{
+        std::istreambuf_iterator<char>{input},
+        std::istreambuf_iterator<char>{}};
+
+    SPAGYRIST_CHECK(selected.has_value());
+    SPAGYRIST_CHECK(arg_text.find("--preview") != std::string::npos);
+    SPAGYRIST_CHECK(arg_text.find("printf '%b' {3}") != std::string::npos);
+    SPAGYRIST_CHECK(arg_text.find("--nth\n1\n") != std::string::npos);
+    SPAGYRIST_CHECK(arg_text.find("--accept-nth\n2\n") != std::string::npos);
+    SPAGYRIST_CHECK(input_text.find("Line 1\\nLine 2\\tTabbed") != std::string::npos);
+    std::filesystem::remove(script);
+    std::filesystem::remove("/tmp/spagyrist-fake-fzf-preview-args");
+    std::filesystem::remove("/tmp/spagyrist-fake-fzf-preview-input");
+}
+
+void fzf_selector_does_not_add_preview_when_absent()
+{
+    const auto script = write_executable_script(
+        "spagyrist-fake-fzf-no-preview.sh",
+        "#!/bin/sh\n"
+        "printf '%s\\n' \"$@\" >/tmp/spagyrist-fake-fzf-no-preview-args\n"
+        "cat >/dev/null\n"
+        "printf 'Only\\t0\\t\\n'\n");
+
+    std::vector<spagyrist::candidate> values;
+    spagyrist::candidate only;
+    only.id = "Only";
+    only.title = "Only";
+    values.push_back(only);
+
+    spagyrist::fzf_selector_options options;
+    options.executable = script.string();
+    spagyrist::fzf_selector selector{options};
+    const auto selected = spagyrist::select_candidate(selector, values);
+
+    std::ifstream args{"/tmp/spagyrist-fake-fzf-no-preview-args"};
+    const std::string arg_text{
+        std::istreambuf_iterator<char>{args},
+        std::istreambuf_iterator<char>{}};
+
+    SPAGYRIST_CHECK(selected.has_value());
+    SPAGYRIST_CHECK(arg_text.find("--preview") == std::string::npos);
+    SPAGYRIST_CHECK(arg_text.find("--nth\n1\n") != std::string::npos);
+    SPAGYRIST_CHECK(arg_text.find("--accept-nth\n2\n") != std::string::npos);
+    std::filesystem::remove(script);
+    std::filesystem::remove("/tmp/spagyrist-fake-fzf-no-preview-args");
+}
+
 void fzf_selector_reports_missing_executable()
 {
     spagyrist::fzf_selector_options options;
@@ -542,6 +617,8 @@ void run_selector_tests()
     number_selector_result_retries_invalid_and_out_of_range_input();
     number_selector_result_reports_empty_candidates_as_no_selection();
     fzf_selector_uses_external_process_even_for_one_candidate();
+    fzf_selector_passes_preview_when_available();
+    fzf_selector_does_not_add_preview_when_absent();
     fzf_selector_reports_missing_executable();
     fzf_selector_result_reports_missing_executable_as_unavailable();
     fzf_selector_result_reports_out_of_range_index();

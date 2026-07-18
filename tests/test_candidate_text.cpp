@@ -14,6 +14,7 @@ spagyrist::candidate rich_candidate()
     value.subtitle = "Kernel";
     value.description = "Unix-like operating system";
     value.url = "https://example.test/linux";
+    value.preview = "Preview text";
     value.metadata.emplace("hidden", "metadata-value");
     return value;
 }
@@ -84,6 +85,7 @@ void candidate_text_projection_keeps_original_candidate()
     SPAGYRIST_CHECK(value.subtitle == original.subtitle);
     SPAGYRIST_CHECK(value.description == original.description);
     SPAGYRIST_CHECK(value.url == original.url);
+    SPAGYRIST_CHECK(value.preview == original.preview);
     SPAGYRIST_CHECK(value.metadata == original.metadata);
 }
 

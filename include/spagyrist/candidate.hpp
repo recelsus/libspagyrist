@@ -15,6 +15,7 @@ struct candidate {
     std::optional<std::string> subtitle;
     std::optional<std::string> description;
     std::optional<std::string> url;
+    std::optional<std::string> preview;
     metadata_map metadata;
 };
 
@@ -30,4 +31,3 @@ struct selection {
 [[nodiscard]] bool is_valid(const candidate& value) noexcept;
 
 } // namespace spagyrist
-

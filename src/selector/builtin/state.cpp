@@ -16,6 +16,7 @@ builtin_selector_state::builtin_selector_state(
     if (options_.visible_count == 0) {
         options_.visible_count = 1;
     }
+    options_.ranking.matcher.reject_scattered_long_matches = true;
     refresh();
 }
 

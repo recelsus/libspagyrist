@@ -26,6 +26,28 @@ std::vector<spagyrist::candidate_text> projected_candidates()
     return spagyrist::project_candidate_texts(candidates);
 }
 
+std::vector<spagyrist::candidate_text> projected_rich_candidates()
+{
+    std::vector<spagyrist::candidate> candidates;
+
+    auto linux_candidate = candidate_with_title("Linux");
+    linux_candidate.subtitle = "Operating system kernel";
+    linux_candidate.description = "A Unix-like operating system family used across servers and devices.";
+    candidates.push_back(std::move(linux_candidate));
+
+    auto freebsd = candidate_with_title("FreeBSD");
+    freebsd.subtitle = "Unix-like operating system";
+    freebsd.description = "A free and open source operating system descended from BSD.";
+    candidates.push_back(std::move(freebsd));
+
+    auto darwin = candidate_with_title("Darwin");
+    darwin.subtitle = "Apple operating system core";
+    darwin.description = "The open source Unix-like core used by Apple's operating systems.";
+    candidates.push_back(std::move(darwin));
+
+    return spagyrist::project_candidate_texts(candidates);
+}
+
 void builtin_state_initially_shows_all_candidates()
 {
     const auto projected = projected_candidates();
@@ -47,6 +69,21 @@ void builtin_state_filters_when_typing()
     SPAGYRIST_CHECK(state.query() == "k");
     SPAGYRIST_CHECK(state.ranked().size() == 1);
     SPAGYRIST_CHECK(state.selected_candidate_index() == 1);
+}
+
+void builtin_state_rejects_scattered_long_word_matches()
+{
+    const auto projected = projected_rich_candidates();
+    spagyrist::detail::builtin_selector_state state{projected};
+
+    state.handle({.key = spagyrist::detail::terminal_key::character, .value = "l"});
+    state.handle({.key = spagyrist::detail::terminal_key::character, .value = "i"});
+    state.handle({.key = spagyrist::detail::terminal_key::character, .value = "n"});
+    state.handle({.key = spagyrist::detail::terminal_key::character, .value = "u"});
+    state.handle({.key = spagyrist::detail::terminal_key::character, .value = "x"});
+
+    SPAGYRIST_CHECK(state.ranked().size() == 1);
+    SPAGYRIST_CHECK(state.selected_candidate_index() == 0);
 }
 
 void builtin_state_backspace_updates_query_and_results()
@@ -159,6 +196,7 @@ void run_builtin_state_tests()
 {
     builtin_state_initially_shows_all_candidates();
     builtin_state_filters_when_typing();
+    builtin_state_rejects_scattered_long_word_matches();
     builtin_state_backspace_updates_query_and_results();
     builtin_state_backspace_removes_one_utf8_code_point();
     builtin_state_moves_selection();

@@ -32,11 +32,15 @@ add_library(spagyrist STATIC
   src/renderer/terminal_renderer.cpp
   src/selector/auto.cpp
   src/selector/builtin/builtin.cpp
+  src/selector/builtin/screen.cpp
   src/selector/builtin/state.cpp
   src/selector/builtin/view.cpp
   src/selector/builtin/terminal.cpp
   src/selector/builtin/utf8.cpp
+  src/selector/fzf/executable.cpp
   src/selector/fzf/fzf.cpp
+  src/selector/fzf/format.cpp
+  src/selector/fzf/process.cpp
   src/selector/number/number.cpp
   src/selector/selector.cpp
   src/validation.cpp

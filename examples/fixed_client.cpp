@@ -79,6 +79,13 @@ std::vector<fixture_item> fixtures()
         "Operating system kernel",
         "A Unix-like operating system family used across servers and devices.",
         "https://example.test/linux");
+    linux_item.preview =
+        "Linux\n"
+        "\n"
+        "Operating system kernel\n"
+        "A Unix-like operating system family used across servers and devices.\n"
+        "\n"
+        "Preview text is supplied by candidate.preview and is used only by preview-capable selectors.";
     output.push_back(fixture_item{
         .candidate = linux_item,
         .document = make_document(
@@ -96,6 +103,11 @@ std::vector<fixture_item> fixtures()
         "Unix-like operating system",
         "A free and open source operating system descended from BSD.",
         "https://example.test/freebsd");
+    freebsd.preview =
+        "FreeBSD\n"
+        "\n"
+        "Unix-like operating system\n"
+        "This preview demonstrates that fzf can show selector-specific candidate details.";
     output.push_back(fixture_item{
         .candidate = freebsd,
         .document = make_document(
@@ -113,6 +125,11 @@ std::vector<fixture_item> fixtures()
         "Apple operating system core",
         "The open source Unix-like core used by Apple's operating systems.",
         "https://example.test/darwin");
+    darwin.preview =
+        "Darwin\n"
+        "\n"
+        "Apple operating system core\n"
+        "Search for Apple in fzf to see this candidate ranked highly while the preview remains available.";
     output.push_back(fixture_item{
         .candidate = darwin,
         .document = make_document(
@@ -130,6 +147,11 @@ std::vector<fixture_item> fixtures()
         "Distributed operating system",
         "A research operating system from Bell Labs.",
         "https://example.test/plan9");
+    plan9.preview =
+        "Plan 9\n"
+        "\n"
+        "Distributed operating system\n"
+        "This shorter entry is useful for checking preview rendering with compact candidate text.";
     output.push_back(fixture_item{
         .candidate = plan9,
         .document = make_document(

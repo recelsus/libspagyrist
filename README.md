@@ -60,6 +60,7 @@ libspagyrist is used as a subproject.
 ```sh
 ./build/examples/spagyrist_fixed_client --list
 ./build/examples/spagyrist_fixed_client --select first --format plain
+./build/examples/spagyrist_fixed_client --select fzf --format terminal
 printf '2\n' | ./build/examples/spagyrist_fixed_client --select number --format markdown
 ```
 
@@ -185,10 +186,18 @@ be used for terminal display and search.
 - ANSI escape sequences from candidate data are not treated as terminal control
 - Match positions for search text and display text are kept separate
 - Matches in non-displayed fields, such as descriptions or URLs, do not create invalid highlights
+- `candidate.preview` is optional and is used only by selectors that support previews
 
 ANSI decoration is applied after safe display truncation. Library-generated
 ANSI sequences are not truncated in the middle, and color output is reset by
 the end of each rendered line.
+
+When `candidate.preview` is present, the fzf selector converts it into a form
+that can be passed to fzf preview. Missing previews are ignored. The built-in
+selector does not render previews.
+The fzf selector limits matching to the candidate text shown in fzf and does
+not include preview text in matching. The matching algorithm itself is still
+fzf's own matcher.
 
 ## Matcher
 

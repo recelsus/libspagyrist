@@ -14,6 +14,7 @@ enum class match_case {
 
 struct match_options {
     match_case case_mode{match_case::smart};
+    bool reject_scattered_long_matches{false};
 };
 
 struct match_result {
