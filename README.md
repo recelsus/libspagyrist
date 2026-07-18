@@ -9,7 +9,7 @@ libspagyrist then handles selection, rendering, and output.
 ## Features
 
 - Common search candidate structure: `spagyrist::candidate`
-- Selection: `fzf` selector, number selector, fallback selector
+- Selection: built-in selector, auto selector, `fzf` selector, number selector, fallback selector
 - Common document structure: `spagyrist::document`
 - Inline / block based document model
 - Markdown / plain text / terminal rendering
@@ -107,8 +107,23 @@ convert selected data into `spagyrist::document`.
 
 ## Selector
 
-Use the `fzf` selector first and fall back to the number selector when `fzf` is
-not available.
+libspagyrist provides a built-in selector that does not depend on external
+commands.
+
+`auto_selector` tries the built-in selector first, then falls back to the number
+selector when the built-in selector is not available, such as in a non-TTY
+environment. `fzf` remains available as an explicitly selected external
+selector.
+
+```cpp
+std::vector<spagyrist::candidate> candidates = /* application data */;
+
+spagyrist::auto_selector selector;
+auto selected = spagyrist::select_candidate(selector, candidates);
+```
+
+You can also explicitly use `fzf` and fall back to the number selector only when
+`fzf` is unavailable or fails internally.
 
 ```cpp
 spagyrist::fzf_selector primary;
@@ -119,6 +134,21 @@ auto selected = spagyrist::select_candidate_with_fallback(
     fallback,
     candidates);
 ```
+
+Cancellation is not treated as a fallback condition. Fallback happens only when
+a selector is unavailable or fails internally.
+
+Built-in selector keys:
+
+- Text input: update the search query
+- Backspace: delete a character
+- Up / Down: move the current selection
+- Enter: confirm selection
+- Escape / Ctrl-C / EOF: cancel
+
+Unicode handling is byte-based and preserves UTF-8 strings. Grapheme-aware
+cursor movement, full-width character measurement, and Unicode normalization
+are outside the initial implementation scope.
 
 ## License
 

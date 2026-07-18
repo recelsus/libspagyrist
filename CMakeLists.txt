@@ -24,9 +24,14 @@ add_library(spagyrist STATIC
   src/renderer/plain_renderer.cpp
   src/renderer/renderer.cpp
   src/renderer/terminal_renderer.cpp
+  src/selector/auto.cpp
+  src/selector/builtin.cpp
+  src/selector/builtin_state.cpp
+  src/selector/builtin_view.cpp
   src/selector/fzf.cpp
   src/selector/number.cpp
   src/selector/selector.cpp
+  src/selector/terminal.cpp
   src/validation.cpp
 )
 
