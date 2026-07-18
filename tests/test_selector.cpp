@@ -576,28 +576,6 @@ void builtin_selector_result_reports_empty_candidates_as_no_selection()
     SPAGYRIST_CHECK(!selected.selected.has_value());
 }
 
-void auto_selector_falls_back_to_number_without_tty()
-{
-    auto values = candidates();
-    std::istringstream input{"2\n"};
-    std::ostringstream output;
-    spagyrist::auto_selector selector{{
-        .builtin = {},
-        .number = {.input = &input, .output = &output},
-    }};
-
-    if (spagyrist::builtin_selector{}.is_available()) {
-        return;
-    }
-
-    const auto selected = spagyrist::select_candidate_result(selector, values);
-
-    SPAGYRIST_CHECK(selected.status == spagyrist::selector_status::selected);
-    SPAGYRIST_CHECK(selected.selected.has_value());
-    SPAGYRIST_CHECK(selected.selected->index == 1);
-    SPAGYRIST_CHECK(output.str().find("1. Linux") != std::string::npos);
-}
-
 } // namespace
 
 void run_selector_tests()
@@ -633,5 +611,4 @@ void run_selector_tests()
     selector_fallback_does_not_fallback_when_primary_returns_invalid_index();
     builtin_selector_reports_unavailable_without_tty();
     builtin_selector_result_reports_empty_candidates_as_no_selection();
-    auto_selector_falls_back_to_number_without_tty();
 }

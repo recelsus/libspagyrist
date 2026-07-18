@@ -37,8 +37,8 @@ private:
 
 void version_reports_project_version()
 {
-    SPAGYRIST_CHECK(spagyrist::version() == "0.1.0");
-    SPAGYRIST_CHECK(spagyrist::version_text() == "libspagyrist 0.1.0");
+    SPAGYRIST_CHECK(spagyrist::version() == "0.2.0");
+    SPAGYRIST_CHECK(spagyrist::version_text() == "libspagyrist 0.2.0");
 }
 
 void runtime_reports_builtin_selectors()
@@ -74,7 +74,7 @@ void runtime_formats_statuses()
 {
     const auto text = spagyrist::runtime_info_text();
 
-    SPAGYRIST_CHECK(text.find("libspagyrist 0.1.0") != std::string::npos);
+    SPAGYRIST_CHECK(text.find("libspagyrist 0.2.0") != std::string::npos);
     SPAGYRIST_CHECK(text.find("Selectors:") != std::string::npos);
     SPAGYRIST_CHECK(text.find("Editors:") != std::string::npos);
 }

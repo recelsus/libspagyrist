@@ -7,7 +7,6 @@ namespace spagyrist {
 
 enum class output_target {
     standard_output,
-    pager,
     editor,
 };
 

@@ -11,7 +11,6 @@
 #include "spagyrist/ranking.hpp"
 #include "spagyrist/renderer.hpp"
 #include "spagyrist/runtime.hpp"
-#include "spagyrist/selector/auto.hpp"
 #include "spagyrist/selector/builtin.hpp"
 #include "spagyrist/selector/fzf.hpp"
 #include "spagyrist/selector/number.hpp"

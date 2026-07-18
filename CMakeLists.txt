@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.20)
 
 project(
   spagyrist
-  VERSION 0.1.0
+  VERSION 0.2.0
   LANGUAGES CXX
 )
 
@@ -33,7 +33,6 @@ add_library(spagyrist STATIC
   src/renderer/plain_renderer.cpp
   src/renderer/renderer.cpp
   src/renderer/terminal_renderer.cpp
-  src/selector/auto.cpp
   src/selector/builtin/builtin.cpp
   src/selector/builtin/screen.cpp
   src/selector/builtin/state.cpp
