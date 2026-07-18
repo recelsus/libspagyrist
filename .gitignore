@@ -100,4 +100,7 @@ feeds/
 # -----------------------------
 # Reference Sources
 # -----------------------------
+docs/
+elem/
+probes/
 reference/
