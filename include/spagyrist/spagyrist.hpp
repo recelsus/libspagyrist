@@ -1,9 +1,12 @@
 #pragma once
 
 #include "spagyrist/candidate.hpp"
+#include "spagyrist/candidate_text.hpp"
 #include "spagyrist/document.hpp"
 #include "spagyrist/error.hpp"
+#include "spagyrist/matcher.hpp"
 #include "spagyrist/output.hpp"
+#include "spagyrist/ranking.hpp"
 #include "spagyrist/renderer.hpp"
 #include "spagyrist/selector/fzf.hpp"
 #include "spagyrist/selector/number.hpp"

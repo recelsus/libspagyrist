@@ -5,6 +5,7 @@
 #include <filesystem>
 #include <fstream>
 #include <sstream>
+#include <stdexcept>
 #include <sys/stat.h>
 
 namespace {
@@ -27,6 +28,32 @@ public:
 
 private:
     std::optional<std::size_t> index_;
+};
+
+class unavailable_selector final : public spagyrist::selector {
+public:
+    bool is_available() const override
+    {
+        return false;
+    }
+
+    std::optional<std::size_t>
+    select(std::span<const spagyrist::candidate>) override
+    {
+        selected = true;
+        return 0;
+    }
+
+    bool selected{};
+};
+
+class throwing_selector final : public spagyrist::selector {
+public:
+    std::optional<std::size_t>
+    select(std::span<const spagyrist::candidate>) override
+    {
+        throw std::runtime_error("selector failed for test");
+    }
 };
 
 std::vector<spagyrist::candidate> candidates()
@@ -73,6 +100,33 @@ void selector_out_of_range_returns_empty_selection()
     const auto selected = spagyrist::select_candidate(selector, values);
 
     SPAGYRIST_CHECK(!selected.has_value());
+}
+
+void selector_result_distinguishes_cancel_and_invalid_selection()
+{
+    auto values = candidates();
+    fixed_selector cancel_selector{std::nullopt};
+    fixed_selector invalid_selector{9};
+
+    const auto cancelled = spagyrist::select_candidate_result(cancel_selector, values);
+    const auto invalid = spagyrist::select_candidate_result(invalid_selector, values);
+
+    SPAGYRIST_CHECK(cancelled.status == spagyrist::selector_status::cancelled);
+    SPAGYRIST_CHECK(!cancelled.selected.has_value());
+    SPAGYRIST_CHECK(invalid.status == spagyrist::selector_status::invalid_selection);
+    SPAGYRIST_CHECK(!invalid.selected.has_value());
+}
+
+void selector_result_reports_empty_candidates_as_no_selection()
+{
+    std::vector<spagyrist::candidate> values;
+    fixed_selector selector{0};
+
+    const auto selected = spagyrist::select_candidate_result(selector, values);
+
+    SPAGYRIST_CHECK(selected.status == spagyrist::selector_status::no_selection);
+    SPAGYRIST_CHECK(!selected.selected.has_value());
+    SPAGYRIST_CHECK(selector.observed_size == 0);
 }
 
 void number_selector_maps_number_to_index()
@@ -196,6 +250,61 @@ void selector_fallback_uses_fallback_when_fzf_is_missing()
     SPAGYRIST_CHECK(fallback.observed_size == values.size());
 }
 
+void selector_fallback_uses_fallback_when_primary_is_unavailable()
+{
+    auto values = candidates();
+    unavailable_selector primary;
+    fixed_selector fallback{1};
+
+    const auto selected = spagyrist::select_candidate_with_fallback_result(primary, fallback, values);
+
+    SPAGYRIST_CHECK(selected.status == spagyrist::selector_status::selected);
+    SPAGYRIST_CHECK(selected.selected.has_value());
+    SPAGYRIST_CHECK(selected.selected->index == 1);
+    SPAGYRIST_CHECK(!primary.selected);
+    SPAGYRIST_CHECK(fallback.observed_size == values.size());
+}
+
+void selector_fallback_uses_fallback_when_primary_throws()
+{
+    auto values = candidates();
+    throwing_selector primary;
+    fixed_selector fallback{1};
+
+    const auto selected = spagyrist::select_candidate_with_fallback_result(primary, fallback, values);
+
+    SPAGYRIST_CHECK(selected.status == spagyrist::selector_status::selected);
+    SPAGYRIST_CHECK(selected.selected.has_value());
+    SPAGYRIST_CHECK(selected.selected->index == 1);
+    SPAGYRIST_CHECK(fallback.observed_size == values.size());
+}
+
+void selector_fallback_does_not_fallback_when_primary_cancels()
+{
+    auto values = candidates();
+    fixed_selector primary{std::nullopt};
+    fixed_selector fallback{1};
+
+    const auto selected = spagyrist::select_candidate_with_fallback_result(primary, fallback, values);
+
+    SPAGYRIST_CHECK(selected.status == spagyrist::selector_status::cancelled);
+    SPAGYRIST_CHECK(!selected.selected.has_value());
+    SPAGYRIST_CHECK(fallback.observed_size == 0);
+}
+
+void selector_fallback_does_not_fallback_when_primary_returns_invalid_index()
+{
+    auto values = candidates();
+    fixed_selector primary{9};
+    fixed_selector fallback{1};
+
+    const auto selected = spagyrist::select_candidate_with_fallback_result(primary, fallback, values);
+
+    SPAGYRIST_CHECK(selected.status == spagyrist::selector_status::invalid_selection);
+    SPAGYRIST_CHECK(!selected.selected.has_value());
+    SPAGYRIST_CHECK(fallback.observed_size == 0);
+}
+
 } // namespace
 
 void run_selector_tests()
@@ -203,6 +312,8 @@ void run_selector_tests()
     selector_result_maps_index_to_candidate();
     selector_cancel_returns_empty_selection();
     selector_out_of_range_returns_empty_selection();
+    selector_result_distinguishes_cancel_and_invalid_selection();
+    selector_result_reports_empty_candidates_as_no_selection();
     number_selector_maps_number_to_index();
     number_selector_empty_input_retries();
     number_selector_invalid_input_retries();
@@ -211,4 +322,8 @@ void run_selector_tests()
     fzf_selector_uses_external_process_even_for_one_candidate();
     fzf_selector_reports_missing_executable();
     selector_fallback_uses_fallback_when_fzf_is_missing();
+    selector_fallback_uses_fallback_when_primary_is_unavailable();
+    selector_fallback_uses_fallback_when_primary_throws();
+    selector_fallback_does_not_fallback_when_primary_cancels();
+    selector_fallback_does_not_fallback_when_primary_returns_invalid_index();
 }

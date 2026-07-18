@@ -1,22 +1,13 @@
 #include "spagyrist/selector/number.hpp"
 
+#include "spagyrist/candidate_text.hpp"
+
 #include <charconv>
 #include <iostream>
 #include <string>
 
 namespace spagyrist {
 namespace {
-
-std::string summary(const candidate& value)
-{
-    auto output = value.title;
-    if (value.subtitle && !value.subtitle->empty()) {
-        output += " - " + *value.subtitle;
-    } else if (value.description && !value.description->empty()) {
-        output += " - " + *value.description;
-    }
-    return output;
-}
 
 std::optional<std::size_t> parse_number(const std::string& value)
 {
@@ -53,7 +44,7 @@ number_selector::select(std::span<const candidate> candidates)
 
     output << "Select a result:\n";
     for (std::size_t i = 0; i < candidates.size(); ++i) {
-        output << "  " << (i + 1) << ". " << summary(candidates[i]) << '\n';
+        output << "  " << (i + 1) << ". " << project_candidate_text(i, candidates[i]).display << '\n';
     }
     while (true) {
         output << "Enter number, or EOF to cancel: ";

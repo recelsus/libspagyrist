@@ -1,5 +1,7 @@
 #include "spagyrist/selector/fzf.hpp"
 
+#include "spagyrist/candidate_text.hpp"
+
 #include <cerrno>
 #include <charconv>
 #include <csignal>
@@ -197,38 +199,13 @@ process_result run_process(
     };
 }
 
-std::string sanitize_field(std::string_view value)
+std::string line_for_candidate(const candidate_text& value)
 {
-    std::string output;
-    output.reserve(value.size());
-    for (const auto ch : value) {
-        if (ch == '\t' || ch == '\n' || ch == '\r') {
-            output += ' ';
-        } else {
-            output += ch;
-        }
-    }
-    return output;
-}
-
-std::string line_for_candidate(std::size_t index, const candidate& value)
-{
-    auto line = std::to_string(index);
+    auto line = std::to_string(value.index);
     line += '\t';
-    line += sanitize_field(value.title);
-
-    if (value.subtitle && !value.subtitle->empty()) {
-        line += '\t';
-        line += sanitize_field(*value.subtitle);
-    }
-    if (value.description && !value.description->empty()) {
-        line += '\t';
-        line += sanitize_field(*value.description);
-    }
-    if (value.url && !value.url->empty()) {
-        line += '\t';
-        line += sanitize_field(*value.url);
-    }
+    line += value.display;
+    line += '\t';
+    line += value.search;
     line += '\n';
     return line;
 }
@@ -236,8 +213,8 @@ std::string line_for_candidate(std::size_t index, const candidate& value)
 std::string input_for_candidates(std::span<const candidate> candidates)
 {
     std::string input;
-    for (std::size_t i = 0; i < candidates.size(); ++i) {
-        input += line_for_candidate(i, candidates[i]);
+    for (const auto& candidate : project_candidate_texts(candidates)) {
+        input += line_for_candidate(candidate);
     }
     return input;
 }
@@ -267,7 +244,7 @@ std::vector<std::string> default_arguments()
         "--delimiter",
         "\t",
         "--with-nth",
-        "2..",
+        "2",
         "--no-sort",
     };
 }

@@ -15,8 +15,11 @@ option(SPAGYRIST_BUILD_TESTS "Build Spagyrist tests" ON)
 
 add_library(spagyrist STATIC
   src/candidate.cpp
+  src/candidate_text.cpp
   src/document.cpp
+  src/matcher.cpp
   src/output/stdout.cpp
+  src/ranking.cpp
   src/renderer/markdown_renderer.cpp
   src/renderer/plain_renderer.cpp
   src/renderer/renderer.cpp

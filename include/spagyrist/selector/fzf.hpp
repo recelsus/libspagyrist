@@ -16,7 +16,7 @@ class fzf_selector final : public selector {
 public:
     explicit fzf_selector(fzf_selector_options options = {});
 
-    [[nodiscard]] bool is_available() const;
+    [[nodiscard]] bool is_available() const override;
 
     [[nodiscard]] std::optional<std::size_t>
     select(std::span<const candidate> candidates) override;

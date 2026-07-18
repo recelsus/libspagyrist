@@ -1,7 +1,10 @@
 add_executable(spagyrist_tests
   test_candidate.cpp
+  test_candidate_text.cpp
   test_document.cpp
+  test_matcher.cpp
   test_output.cpp
+  test_ranking.cpp
   test_selector.cpp
   test_renderer.cpp
   test_main.cpp
