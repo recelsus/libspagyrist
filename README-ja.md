@@ -50,8 +50,8 @@ make
 ctest --output-on-failure
 ```
 
-トップレベルでビルドする場合、簡易動作確認用の固定 client も作成されます。
-サブプロジェクトとして利用する場合はデフォルトで無効です。
+トップレベルでビルドする場合、簡易動作確認用の固定 client も作成します。
+サブプロジェクトとして利用する場合はデフォルトで無効。
 
 ```sh
 ./build/examples/spagyrist_fixed_client --list
@@ -114,8 +114,8 @@ int main()
 
 標準の選択方式として、外部コマンドに依存しない built-in selector を提供します。
 
-`auto_selector` は built-in selector を優先し、非TTY環境などで利用できない場合は
-number selector に fallback します。`fzf` は明示的に選択する外部 selector として
+`auto_selector`はbuilt-in selectorを優先し、非TTY環境などで利用できない場合は
+number selectorにfallbackします。`fzf` などは明示的に選択する外部selectorとして
 利用できます。
 
 ```cpp
@@ -125,7 +125,7 @@ spagyrist::auto_selector selector;
 auto selected = spagyrist::select_candidate(selector, candidates);
 ```
 
-`fzf` を明示的に使い、失敗時だけ number selector へ fallback することもできます。
+`fzf`を明示的に使い、失敗時だけnumber selectorへfallbackすることもできます。
 
 ```cpp
 spagyrist::fzf_selector primary;
@@ -137,8 +137,22 @@ auto selected = spagyrist::select_candidate_with_fallback(
     candidates);
 ```
 
-キャンセルは fallback の理由として扱いません。利用不可能または selector 内部エラーの
-場合にのみ fallback します。
+キャンセルは fallback の理由として扱いません。利用不可能またはselector内部エラーの
+場合にのみfallbackします。
+
+詳細状態が必要な場合は `select_candidate_result()` を利用します。
+
+- `selected`: 正常選択
+- `no_selection`: 候補なし
+- `cancelled`: Escape、Ctrl-C、EOF、またはselector側のキャンセル
+- `unavailable`: 実行環境や外部コマンドが利用不可
+- `error`: selector内部エラー、端末初期化失敗、読み込み/書き込み失敗など
+- `invalid_selection`: selectorが候補範囲外のindexを返した場合
+
+`select_candidate()` は互換用APIで、詳細状態APIの結果から選択結果のみを返します。
+`fzf` selectorでは、実行ファイルが見つからない場合は `unavailable`、異常終了や
+不正出力は `error` として扱います。number selectorの不正入力や範囲外入力は
+即時の最終状態にせず、再入力を求めます。
 
 内蔵 selector の基本操作:
 
@@ -150,6 +164,32 @@ auto selected = spagyrist::select_candidate_with_fallback(
 
 Unicode は UTF-8 文字列を破壊しない byte-based 処理です。書記素単位のカーソル移動、
 全角幅計算、Unicode 正規化は初期実装では対象外です。
+
+## Candidate Text
+
+selectorで利用する表示用文字列と検索用文字列は、`candidate` から投影して作成します。
+この投影処理では、元の `candidate` は変更せず、端末表示へ渡す文字列だけを安全化します。
+
+- C0制御文字、ESC、DELは空白へ置換
+- 候補由来のANSIエスケープシーケンスは端末制御として扱わない
+- 検索用文字列上の一致位置と表示用文字列上の一致位置を分離
+- 説明やURLなど表示されていないフィールドだけに一致した場合、不正な強調表示を行わない
+
+ANSI装飾は、表示文字列を安全に切り詰めた後に付与します。ライブラリが生成したANSI
+シーケンスを途中で切断せず、カラー表示時は行末までにリセットします。
+
+## Matcher
+
+現在のmatcherは、greedyなsubsequence matcherです。
+
+- byte-based
+- fzy互換ではない
+- 同じ文字が複数存在する場合、最適一致位置を探索しない
+- 長い一致範囲は不一致にせず、スコア減点として扱う
+- 連続一致、前方一致、単語境界、case boundaryを加点する
+
+このため、長いパスや関数名の略称検索は候補として残ります。ただし、より近い一致や
+連続した一致の方が高くrankされます。
 
 ## License
 

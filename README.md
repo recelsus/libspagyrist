@@ -148,6 +148,21 @@ auto selected = spagyrist::select_candidate_with_fallback(
 Cancellation is not treated as a fallback condition. Fallback happens only when
 a selector is unavailable or fails internally.
 
+Use `select_candidate_result()` when detailed selector status matters.
+
+- `selected`: selection completed
+- `no_selection`: no candidates
+- `cancelled`: Escape, Ctrl-C, EOF, or selector-side cancellation
+- `unavailable`: required environment or external command is unavailable
+- `error`: selector internal error, terminal setup failure, read/write failure, and similar failures
+- `invalid_selection`: the selector returned an out-of-range candidate index
+
+`select_candidate()` is the compatibility API and returns only the selected
+value derived from the detailed result. For the `fzf` selector, a missing
+executable is `unavailable`, while abnormal exits and invalid output are
+`error`. Invalid or out-of-range input in the number selector asks for input
+again instead of becoming an immediate final status.
+
 Built-in selector keys:
 
 - Text input: update the search query
@@ -159,6 +174,34 @@ Built-in selector keys:
 Unicode handling is byte-based and preserves UTF-8 strings. Grapheme-aware
 cursor movement, full-width character measurement, and Unicode normalization
 are outside the initial implementation scope.
+
+## Candidate Text
+
+Selectors use display and search strings projected from `candidate`. Projection
+does not modify the original `candidate`; it sanitizes only the text that will
+be used for terminal display and search.
+
+- C0 control characters, ESC, and DEL are replaced with spaces
+- ANSI escape sequences from candidate data are not treated as terminal control
+- Match positions for search text and display text are kept separate
+- Matches in non-displayed fields, such as descriptions or URLs, do not create invalid highlights
+
+ANSI decoration is applied after safe display truncation. Library-generated
+ANSI sequences are not truncated in the middle, and color output is reset by
+the end of each rendered line.
+
+## Matcher
+
+The current matcher is a greedy subsequence matcher.
+
+- Byte-based
+- Not fzy-compatible
+- Does not search for the optimal alignment when repeated characters exist
+- Long match spans remain matched, but receive a score penalty
+- Consecutive matches, prefix matches, word boundaries, and case boundaries are rewarded
+
+This keeps abbreviation search useful for long paths and function names while
+ranking closer and more consecutive matches higher.
 
 ## License
 
