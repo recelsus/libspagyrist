@@ -1,4 +1,4 @@
-#include "selector/builtin_view.hpp"
+#include "selector/builtin/view.hpp"
 
 #include "test_support.hpp"
 

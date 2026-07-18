@@ -1,4 +1,4 @@
-#include "selector/terminal.hpp"
+#include "selector/builtin/terminal.hpp"
 
 #include "test_support.hpp"
 

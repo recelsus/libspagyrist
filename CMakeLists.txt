@@ -31,13 +31,13 @@ add_library(spagyrist STATIC
   src/renderer/renderer.cpp
   src/renderer/terminal_renderer.cpp
   src/selector/auto.cpp
-  src/selector/builtin.cpp
-  src/selector/builtin_state.cpp
-  src/selector/builtin_view.cpp
-  src/selector/fzf.cpp
-  src/selector/number.cpp
+  src/selector/builtin/builtin.cpp
+  src/selector/builtin/state.cpp
+  src/selector/builtin/view.cpp
+  src/selector/builtin/terminal.cpp
+  src/selector/fzf/fzf.cpp
+  src/selector/number/number.cpp
   src/selector/selector.cpp
-  src/selector/terminal.cpp
   src/validation.cpp
 )
 

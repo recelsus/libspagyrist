@@ -1,8 +1,8 @@
 #include "spagyrist/selector/builtin.hpp"
 
 #include "spagyrist/candidate_text.hpp"
-#include "builtin_state.hpp"
-#include "builtin_view.hpp"
+#include "state.hpp"
+#include "view.hpp"
 #include "terminal.hpp"
 
 #include <algorithm>
