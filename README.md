@@ -9,7 +9,7 @@ libspagyrist then handles selection, rendering, and output.
 ## Features
 
 - Common search candidate structure: `spagyrist::candidate`
-- Selection: built-in selector, auto selector, `fzf` selector, number selector, fallback selector
+- Selection: built-in selector, `fzf` selector, number selector, fallback selector
 - Common document structure: `spagyrist::document`
 - Inline / block based document model
 - Markdown / plain text / terminal rendering
@@ -59,6 +59,8 @@ libspagyrist is used as a subproject.
 
 ```sh
 ./build/examples/spagyrist_fixed_client --list
+./build/examples/spagyrist_fixed_client --version
+./build/examples/spagyrist_fixed_client --info
 ./build/examples/spagyrist_fixed_client --select first --format plain
 ./build/examples/spagyrist_fixed_client --select fzf --format terminal
 printf '2\n' | ./build/examples/spagyrist_fixed_client --select number --format markdown
@@ -131,21 +133,76 @@ Editor-specific options such as `nvim -R` can be configured through `VISUAL` or
 `--output "nvim -R"`, is out of scope. Client CLIs should expose only the output
 target, such as `--output editor`.
 
+## Help Text
+
+Client applications can compose libspagyrist's common help fragments into their
+own help output. Options are also exposed as list APIs, so additions to
+selectors, formats, or outputs can be reflected by updating the libspagyrist
+lists.
+
+```cpp
+std::cout << "Client options:\n";
+std::cout << "  --lang <code>  Client-specific language option.\n";
+std::cout << "\n";
+std::cout << spagyrist::cli_help_text();
+```
+
+Use these APIs when a client wants finer control over layout:
+
+- `spagyrist::selector_help_text()`
+- `spagyrist::format_help_text()`
+- `spagyrist::output_help_text()`
+- `spagyrist::selector_cli_help_option()`
+- `spagyrist::format_cli_help_option()`
+- `spagyrist::output_cli_help_option()`
+- `spagyrist::version_cli_help_option()`
+- `spagyrist::info_cli_help_option()`
+- `spagyrist::selector_help_options()`
+- `spagyrist::format_help_options()`
+- `spagyrist::output_help_options()`
+
+## Version And Runtime Info
+
+Client applications can show libspagyrist's version and the features available
+in the current runtime environment.
+
+```cpp
+std::cout << spagyrist::version_text() << '\n';
+std::cout << spagyrist::runtime_info_text();
+```
+
+`runtime_info_text()` reports selector and editor status. Selector status covers
+the built-in `builtin` and `number` selectors plus detection of the
+external `fzf` command. Editor status covers `VISUAL`, `EDITOR`, `nvim`, `vim`,
+`vi`, and `nano` in resolution order. Use these APIs for finer control:
+
+- `spagyrist::version()`
+- `spagyrist::version_text()`
+- `spagyrist::selector_runtime_statuses()`
+- `spagyrist::editor_runtime_statuses()`
+- `spagyrist::format_runtime_statuses()`
+- `spagyrist::runtime_info_text()`
+
 ## Selector
 
 libspagyrist provides a built-in selector that does not depend on external
 commands.
 
-`auto_selector` tries the built-in selector first, then falls back to the number
-selector when the built-in selector is not available, such as in a non-TTY
+For standard clients, prefer the built-in selector as the default and fall back
+to the number selector when it is not available, such as in a non-TTY
 environment. `fzf` remains available as an explicitly selected external
 selector.
 
 ```cpp
 std::vector<spagyrist::candidate> candidates = /* application data */;
 
-spagyrist::auto_selector selector;
-auto selected = spagyrist::select_candidate(selector, candidates);
+spagyrist::builtin_selector primary;
+spagyrist::number_selector fallback;
+
+auto selected = spagyrist::select_candidate_with_fallback(
+    primary,
+    fallback,
+    candidates);
 ```
 
 You can also explicitly use `fzf` and fall back to the number selector only when

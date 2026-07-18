@@ -272,19 +272,18 @@ void print_usage(std::ostream& output)
     output
         << "Usage: spagyrist_fixed_client [options]\n"
         << "\n"
-        << "Options:\n"
-        << "  --select <auto|builtin|fzf|number|first>  Selector. Default: auto\n"
-        << "  --format <terminal|markdown|plain>        Output format. Default: terminal\n"
-        << "  --output <stdout|editor>                  Output target. Default: stdout\n"
-        << "  --list                                    Print fixed candidates and exit\n"
-        << "  -h, --help                                Show this help\n";
+        << "Client options:\n"
+        << "  --list            Print fixed candidates and exit.\n"
+        << "  -h, --help        Show this help.\n"
+        << "\n"
+        << spagyrist::cli_help_text();
 }
 
 } // namespace
 
 int main(int argc, char** argv)
 {
-    std::string selector_name{"auto"};
+    std::string selector_name{"builtin"};
     auto output_format = spagyrist::format::terminal;
     auto output_target = spagyrist::output_target::standard_output;
     bool list_only = false;
@@ -295,19 +294,28 @@ int main(int argc, char** argv)
             print_usage(std::cout);
             return 0;
         }
+        if (arg == "--version") {
+            std::cout << "spagyrist_fixed_client using " << spagyrist::version_text() << '\n';
+            return 0;
+        }
+        if (arg == "--info") {
+            std::cout << spagyrist::runtime_info_text();
+            return 0;
+        }
         if (arg == "--list") {
             list_only = true;
             continue;
         }
-        if (arg == "--select" || arg == "--format" || arg == "--output") {
+        if (arg == "--select" || arg == "-s" || arg == "--format" || arg == "-f"
+            || arg == "--output" || arg == "-o") {
             if (i + 1 >= argc) {
                 std::cerr << "missing value for " << arg << '\n';
                 return 2;
             }
             const std::string_view value{argv[++i]};
-            if (arg == "--select") {
+            if (arg == "--select" || arg == "-s") {
                 selector_name = value;
-            } else if (arg == "--format") {
+            } else if (arg == "--format" || arg == "-f") {
                 const auto parsed = parse_format(value);
                 if (!parsed) {
                     std::cerr << "invalid format: " << value << '\n';
@@ -339,12 +347,10 @@ int main(int argc, char** argv)
     }
 
     std::optional<spagyrist::selection> selected;
-    if (selector_name == "auto") {
-        spagyrist::auto_selector selector;
-        selected = spagyrist::select_candidate(selector, candidates);
-    } else if (selector_name == "builtin") {
-        spagyrist::builtin_selector selector;
-        selected = spagyrist::select_candidate(selector, candidates);
+    if (selector_name == "builtin") {
+        spagyrist::builtin_selector primary;
+        spagyrist::number_selector fallback;
+        selected = spagyrist::select_candidate_with_fallback(primary, fallback, candidates);
     } else if (selector_name == "fzf") {
         spagyrist::fzf_selector selector;
         selected = spagyrist::select_candidate(selector, candidates);

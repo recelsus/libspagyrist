@@ -23,6 +23,7 @@ add_library(spagyrist STATIC
   src/candidate.cpp
   src/candidate_text.cpp
   src/document.cpp
+  src/help.cpp
   src/matcher.cpp
   src/output/editor.cpp
   src/output/stdout.cpp
@@ -44,12 +45,19 @@ add_library(spagyrist STATIC
   src/selector/fzf/process.cpp
   src/selector/number/number.cpp
   src/selector/selector.cpp
+  src/runtime.cpp
   src/validation.cpp
+  src/version.cpp
 )
 
 add_library(spagyrist::spagyrist ALIAS spagyrist)
 
 target_compile_features(spagyrist PUBLIC cxx_std_20)
+
+target_compile_definitions(spagyrist
+  PRIVATE
+    SPAGYRIST_VERSION="${PROJECT_VERSION}"
+)
 
 target_include_directories(spagyrist
   PUBLIC
