@@ -1,5 +1,7 @@
 #include "state.hpp"
 
+#include "utf8.hpp"
+
 #include <algorithm>
 #include <utility>
 
@@ -59,7 +61,7 @@ builtin_selector_action builtin_selector_state::handle(terminal_input input)
         return builtin_selector_action::editing;
     case terminal_key::backspace:
         if (!query_.empty()) {
-            query_.pop_back();
+            pop_back_utf8_code_point(query_);
             refresh();
         }
         return builtin_selector_action::editing;

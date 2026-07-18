@@ -1,5 +1,7 @@
 #include "view.hpp"
 
+#include "utf8.hpp"
+
 #include <algorithm>
 #include <string_view>
 #include <utility>
@@ -29,11 +31,12 @@ truncated_display truncate_display(std::string_view value, std::size_t width)
             .matched_prefix_size = 0,
         };
     }
-    std::string output{value.substr(0, width - 1)};
+    const auto prefix_size = utf8_safe_prefix_size(value, width - 1);
+    std::string output{value.substr(0, prefix_size)};
     output += '~';
     return truncated_display{
         .text = std::move(output),
-        .matched_prefix_size = width - 1,
+        .matched_prefix_size = prefix_size,
     };
 }
 

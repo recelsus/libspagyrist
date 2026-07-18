@@ -1,5 +1,7 @@
 #include "terminal.hpp"
 
+#include "utf8.hpp"
+
 #include <cerrno>
 #include <cstring>
 #include <stdexcept>
@@ -194,8 +196,8 @@ terminal_input parse_terminal_input(std::string_view input) noexcept
         }
         return terminal_input{.key = terminal_key::unknown};
     }
-    if (first >= 0x20) {
-        return terminal_input{.key = terminal_key::character, .value = input.front()};
+    if (first >= 0x20 && is_complete_utf8_code_point(input)) {
+        return terminal_input{.key = terminal_key::character, .value = std::string{input}};
     }
     return terminal_input{.key = terminal_key::unknown};
 }
@@ -218,7 +220,20 @@ terminal_input read_terminal_input(int fd)
     }
 
     if (ch != '\x1b') {
-        return parse_terminal_input(std::string_view{&ch, 1});
+        std::string sequence;
+        sequence += ch;
+        const auto length = utf8_code_point_length(static_cast<unsigned char>(ch));
+        if (length == 0) {
+            return terminal_input{.key = terminal_key::unknown};
+        }
+        for (std::size_t i = 1; i < length; ++i) {
+            const auto next = read_byte_with_timeout(fd, 10000);
+            if (!next) {
+                return terminal_input{.key = terminal_key::unknown};
+            }
+            sequence += *next;
+        }
+        return parse_terminal_input(sequence);
     }
 
     char sequence[3]{ch, 0, 0};

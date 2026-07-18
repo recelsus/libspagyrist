@@ -2,6 +2,7 @@
 
 #include "test_support.hpp"
 
+#include <string_view>
 #include <unistd.h>
 
 namespace {
@@ -31,7 +32,7 @@ void terminal_input_parses_basic_keys()
     using spagyrist::detail::terminal_key;
 
     SPAGYRIST_CHECK(spagyrist::detail::parse_terminal_input("a").key == terminal_key::character);
-    SPAGYRIST_CHECK(spagyrist::detail::parse_terminal_input("a").value == 'a');
+    SPAGYRIST_CHECK(spagyrist::detail::parse_terminal_input("a").value == "a");
     SPAGYRIST_CHECK(spagyrist::detail::parse_terminal_input("\n").key == terminal_key::enter);
     SPAGYRIST_CHECK(spagyrist::detail::parse_terminal_input("\177").key == terminal_key::backspace);
     SPAGYRIST_CHECK(spagyrist::detail::parse_terminal_input("\003").key == terminal_key::ctrl_c);
@@ -63,7 +64,64 @@ void terminal_input_reads_from_fd()
     close(fds[0]);
 
     SPAGYRIST_CHECK(read.key == terminal_key::character);
-    SPAGYRIST_CHECK(read.value == 'x');
+    SPAGYRIST_CHECK(read.value == "x");
+}
+
+void terminal_input_parses_utf8_characters()
+{
+    using spagyrist::detail::terminal_key;
+
+    const auto two_byte = spagyrist::detail::parse_terminal_input("\xc3\xa9");
+    const auto three_byte = spagyrist::detail::parse_terminal_input("\xe3\x81\x82");
+    const auto four_byte = spagyrist::detail::parse_terminal_input("\xf0\x9f\x98\x80");
+
+    SPAGYRIST_CHECK(two_byte.key == terminal_key::character);
+    SPAGYRIST_CHECK(two_byte.value == "\xc3\xa9");
+    SPAGYRIST_CHECK(three_byte.key == terminal_key::character);
+    SPAGYRIST_CHECK(three_byte.value == "\xe3\x81\x82");
+    SPAGYRIST_CHECK(four_byte.key == terminal_key::character);
+    SPAGYRIST_CHECK(four_byte.value == "\xf0\x9f\x98\x80");
+}
+
+void terminal_input_rejects_invalid_utf8()
+{
+    using spagyrist::detail::terminal_key;
+
+    SPAGYRIST_CHECK(spagyrist::detail::parse_terminal_input("\x80").key == terminal_key::unknown);
+    SPAGYRIST_CHECK(spagyrist::detail::parse_terminal_input("\xe3\x81").key == terminal_key::unknown);
+}
+
+void terminal_input_reads_utf8_from_fd()
+{
+    using spagyrist::detail::terminal_key;
+
+    int fds[2]{};
+    SPAGYRIST_CHECK(pipe(fds) == 0);
+    constexpr std::string_view input{"\xe3\x81\x82"};
+    SPAGYRIST_CHECK(write(fds[1], input.data(), input.size()) == static_cast<ssize_t>(input.size()));
+    close(fds[1]);
+
+    const auto read = spagyrist::detail::read_terminal_input(fds[0]);
+    close(fds[0]);
+
+    SPAGYRIST_CHECK(read.key == terminal_key::character);
+    SPAGYRIST_CHECK(read.value == input);
+}
+
+void terminal_input_handles_incomplete_utf8_from_fd()
+{
+    using spagyrist::detail::terminal_key;
+
+    int fds[2]{};
+    SPAGYRIST_CHECK(pipe(fds) == 0);
+    const char input = '\xe3';
+    SPAGYRIST_CHECK(write(fds[1], &input, 1) == 1);
+    close(fds[1]);
+
+    const auto read = spagyrist::detail::read_terminal_input(fds[0]);
+    close(fds[0]);
+
+    SPAGYRIST_CHECK(read.key == terminal_key::unknown);
 }
 
 void terminal_input_reads_single_escape_as_escape()
@@ -92,5 +150,9 @@ void run_terminal_tests()
     terminal_input_parses_basic_keys();
     terminal_input_parses_arrow_keys();
     terminal_input_reads_from_fd();
+    terminal_input_parses_utf8_characters();
+    terminal_input_rejects_invalid_utf8();
+    terminal_input_reads_utf8_from_fd();
+    terminal_input_handles_incomplete_utf8_from_fd();
     terminal_input_reads_single_escape_as_escape();
 }

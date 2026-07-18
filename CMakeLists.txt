@@ -35,6 +35,7 @@ add_library(spagyrist STATIC
   src/selector/builtin/state.cpp
   src/selector/builtin/view.cpp
   src/selector/builtin/terminal.cpp
+  src/selector/builtin/utf8.cpp
   src/selector/fzf/fzf.cpp
   src/selector/number/number.cpp
   src/selector/selector.cpp

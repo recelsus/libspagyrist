@@ -29,7 +29,7 @@ enum class terminal_key {
 
 struct terminal_input {
     terminal_key key{terminal_key::unknown};
-    char value{};
+    std::string value{};
 };
 
 class raw_terminal_mode {

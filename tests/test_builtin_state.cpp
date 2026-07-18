@@ -42,7 +42,7 @@ void builtin_state_filters_when_typing()
     const auto projected = projected_candidates();
     spagyrist::detail::builtin_selector_state state{projected};
 
-    state.handle({.key = spagyrist::detail::terminal_key::character, .value = 'k'});
+    state.handle({.key = spagyrist::detail::terminal_key::character, .value = "k"});
 
     SPAGYRIST_CHECK(state.query() == "k");
     SPAGYRIST_CHECK(state.ranked().size() == 1);
@@ -54,11 +54,23 @@ void builtin_state_backspace_updates_query_and_results()
     const auto projected = projected_candidates();
     spagyrist::detail::builtin_selector_state state{projected};
 
-    state.handle({.key = spagyrist::detail::terminal_key::character, .value = 'k'});
+    state.handle({.key = spagyrist::detail::terminal_key::character, .value = "k"});
     state.handle({.key = spagyrist::detail::terminal_key::backspace});
 
     SPAGYRIST_CHECK(state.query().empty());
     SPAGYRIST_CHECK(state.ranked().size() == projected.size());
+}
+
+void builtin_state_backspace_removes_one_utf8_code_point()
+{
+    const auto projected = projected_candidates();
+    spagyrist::detail::builtin_selector_state state{projected};
+
+    state.handle({.key = spagyrist::detail::terminal_key::character, .value = "あ"});
+    state.handle({.key = spagyrist::detail::terminal_key::character, .value = "い"});
+    state.handle({.key = spagyrist::detail::terminal_key::backspace});
+
+    SPAGYRIST_CHECK(state.query() == "あ");
 }
 
 void builtin_state_moves_selection()
@@ -109,8 +121,8 @@ void builtin_state_enter_keeps_editing_when_no_result_exists()
     const auto projected = projected_candidates();
     spagyrist::detail::builtin_selector_state state{projected};
 
-    state.handle({.key = spagyrist::detail::terminal_key::character, .value = 'z'});
-    state.handle({.key = spagyrist::detail::terminal_key::character, .value = 'z'});
+    state.handle({.key = spagyrist::detail::terminal_key::character, .value = "z"});
+    state.handle({.key = spagyrist::detail::terminal_key::character, .value = "z"});
     const auto action = state.handle({.key = spagyrist::detail::terminal_key::enter});
 
     SPAGYRIST_CHECK(state.ranked().empty());
@@ -148,6 +160,7 @@ void run_builtin_state_tests()
     builtin_state_initially_shows_all_candidates();
     builtin_state_filters_when_typing();
     builtin_state_backspace_updates_query_and_results();
+    builtin_state_backspace_removes_one_utf8_code_point();
     builtin_state_moves_selection();
     builtin_state_moves_selection_with_ctrl_n_and_ctrl_p();
     builtin_state_enter_selects_when_candidate_exists();
