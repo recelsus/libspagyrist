@@ -148,6 +148,7 @@ void selector_result_reports_empty_candidates_as_no_selection()
 
     SPAGYRIST_CHECK(selected.status == spagyrist::selector_status::no_selection);
     SPAGYRIST_CHECK(!selected.selected.has_value());
+    SPAGYRIST_CHECK(selected.message == "No candidates found.");
     SPAGYRIST_CHECK(selector.observed_size == 0);
 }
 

@@ -2,6 +2,7 @@
 
 #include "spagyrist/candidate.hpp"
 #include "spagyrist/candidate_text.hpp"
+#include "spagyrist/cli.hpp"
 #include "spagyrist/document.hpp"
 #include "spagyrist/error.hpp"
 #include "spagyrist/help.hpp"

@@ -161,6 +161,29 @@ Use these APIs when a client wants finer control over layout:
 - `spagyrist::format_help_options()`
 - `spagyrist::output_help_options()`
 
+## Common CLI
+
+Client applications can delegate common Spagyrist option parsing, selector
+execution, and output dispatch to libspagyrist.
+
+```cpp
+const auto parsed = spagyrist::parse_common_args(args);
+auto selected = spagyrist::select_candidate(parsed.options.selector, candidates);
+auto rendered = spagyrist::render(document, parsed.options.output_format);
+spagyrist::write_output(parsed.options.output, rendered, std::cout);
+```
+
+Common options:
+
+- `-s, --select <builtin|fzf|number>`
+- `-f, --format <terminal|markdown|plain>`
+- `-o, --output <stdout|editor>`
+- `--version`
+- `--info`
+
+Client-specific options should be handled by the client before passing the
+remaining arguments to `spagyrist::parse_common_args()`.
+
 ## Version And Runtime Info
 
 Client applications can show libspagyrist's version and the features available

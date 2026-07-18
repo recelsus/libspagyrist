@@ -154,6 +154,29 @@ std::cout << spagyrist::cli_help_text();
 - `spagyrist::format_help_options()`
 - `spagyrist::output_help_options()`
 
+## Common CLI
+
+クライアントアプリケーションは、Spagyrist共通オプションのparse、selector実行、
+output dispatchをlibspagyrist側へ任せられます。
+
+```cpp
+const auto parsed = spagyrist::parse_common_args(args);
+auto selected = spagyrist::select_candidate(parsed.options.selector, candidates);
+auto rendered = spagyrist::render(document, parsed.options.output_format);
+spagyrist::write_output(parsed.options.output, rendered, std::cout);
+```
+
+対象となる共通オプション:
+
+- `-s, --select <builtin|fzf|number>`
+- `-f, --format <terminal|markdown|plain>`
+- `-o, --output <stdout|editor>`
+- `--version`
+- `--info`
+
+クライアント固有オプションは、クライアント側で処理してから残りを
+`spagyrist::parse_common_args()` に渡します。
+
 ## Version And Runtime Info
 
 クライアントアプリケーションは、libspagyristのversionと実行環境で利用できる機能を

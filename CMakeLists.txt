@@ -22,6 +22,7 @@ option(SPAGYRIST_BUILD_EXAMPLES "Build Spagyrist example clients" ${SPAGYRIST_BU
 add_library(spagyrist STATIC
   src/candidate.cpp
   src/candidate_text.cpp
+  src/cli.cpp
   src/document.cpp
   src/help.cpp
   src/matcher.cpp

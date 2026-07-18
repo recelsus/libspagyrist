@@ -19,7 +19,7 @@ selector_result selector_result::no_selection()
     return selector_result{
         .status = selector_status::no_selection,
         .index = std::nullopt,
-        .message = {},
+        .message = "No candidates found.",
     };
 }
 

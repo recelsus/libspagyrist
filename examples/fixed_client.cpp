@@ -242,31 +242,6 @@ std::vector<spagyrist::candidate> candidates_from(const std::vector<fixture_item
     return output;
 }
 
-std::optional<spagyrist::format> parse_format(std::string_view value)
-{
-    if (value == "terminal") {
-        return spagyrist::format::terminal;
-    }
-    if (value == "markdown") {
-        return spagyrist::format::markdown;
-    }
-    if (value == "plain") {
-        return spagyrist::format::plain;
-    }
-    return std::nullopt;
-}
-
-std::optional<spagyrist::output_target> parse_output(std::string_view value)
-{
-    if (value == "stdout") {
-        return spagyrist::output_target::standard_output;
-    }
-    if (value == "editor") {
-        return spagyrist::output_target::editor;
-    }
-    return std::nullopt;
-}
-
 void print_usage(std::ostream& output)
 {
     output
@@ -283,9 +258,9 @@ void print_usage(std::ostream& output)
 
 int main(int argc, char** argv)
 {
-    std::string selector_name{"builtin"};
-    auto output_format = spagyrist::format::terminal;
-    auto output_target = spagyrist::output_target::standard_output;
+    std::vector<std::string> common_args;
+    spagyrist::common_options common;
+    bool first = false;
     bool list_only = false;
 
     for (int i = 1; i < argc; ++i) {
@@ -306,35 +281,34 @@ int main(int argc, char** argv)
             list_only = true;
             continue;
         }
-        if (arg == "--select" || arg == "-s" || arg == "--format" || arg == "-f"
-            || arg == "--output" || arg == "-o") {
+        if ((arg == "--select" || arg == "-s") && i + 1 < argc && std::string_view{argv[i + 1]} == "first") {
+            first = true;
+            ++i;
+            continue;
+        }
+        if (spagyrist::is_common_value_option(arg)) {
             if (i + 1 >= argc) {
                 std::cerr << "missing value for " << arg << '\n';
                 return 2;
             }
-            const std::string_view value{argv[++i]};
-            if (arg == "--select" || arg == "-s") {
-                selector_name = value;
-            } else if (arg == "--format" || arg == "-f") {
-                const auto parsed = parse_format(value);
-                if (!parsed) {
-                    std::cerr << "invalid format: " << value << '\n';
-                    return 2;
-                }
-                output_format = *parsed;
-            } else {
-                const auto parsed = parse_output(value);
-                if (!parsed) {
-                    std::cerr << "invalid output: " << value << '\n';
-                    return 2;
-                }
-                output_target = *parsed;
-            }
+            common_args.emplace_back(arg);
+            common_args.emplace_back(argv[++i]);
+            continue;
+        }
+        if (spagyrist::is_common_flag_option(arg)) {
+            common_args.emplace_back(arg);
             continue;
         }
         std::cerr << "unknown option: " << arg << '\n';
         return 2;
     }
+
+    const auto parsed_common = spagyrist::parse_common_args(common_args);
+    if (parsed_common.error) {
+        std::cerr << *parsed_common.error << '\n';
+        return 2;
+    }
+    common = parsed_common.options;
 
     const auto items = fixtures();
     auto candidates = candidates_from(items);
@@ -346,35 +320,22 @@ int main(int argc, char** argv)
         return 0;
     }
 
-    std::optional<spagyrist::selection> selected;
-    if (selector_name == "builtin") {
-        spagyrist::builtin_selector primary;
-        spagyrist::number_selector fallback;
-        selected = spagyrist::select_candidate_with_fallback(primary, fallback, candidates);
-    } else if (selector_name == "fzf") {
-        spagyrist::fzf_selector selector;
-        selected = spagyrist::select_candidate(selector, candidates);
-    } else if (selector_name == "number") {
-        spagyrist::number_selector selector;
-        selected = spagyrist::select_candidate(selector, candidates);
-    } else if (selector_name == "first") {
+    spagyrist::candidate_selection_result selected;
+    if (first) {
         first_selector selector;
-        selected = spagyrist::select_candidate(selector, candidates);
+        selected = spagyrist::select_candidate_result(selector, candidates);
     } else {
-        std::cerr << "invalid selector: " << selector_name << '\n';
-        return 2;
+        selected = spagyrist::select_candidate(common.selector, candidates);
     }
 
-    if (!selected) {
-        std::cerr << "selection cancelled or unavailable\n";
+    if (!selected.selected) {
+        if (!selected.message.empty()) {
+            std::cerr << selected.message << '\n';
+        }
         return 1;
     }
 
-    const auto rendered = spagyrist::render(items[selected->index].document, output_format);
-    if (output_target == spagyrist::output_target::editor) {
-        spagyrist::write_editor(rendered, std::cout);
-    } else {
-        spagyrist::write_stdout(std::cout, rendered);
-    }
+    const auto rendered = spagyrist::render(items[selected.selected->index].document, common.output_format);
+    spagyrist::write_output(common.output, rendered, std::cout);
     return 0;
 }

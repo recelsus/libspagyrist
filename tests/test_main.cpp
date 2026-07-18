@@ -7,6 +7,7 @@ void run_builtin_state_tests();
 void run_builtin_view_tests();
 void run_candidate_tests();
 void run_candidate_text_tests();
+void run_cli_tests();
 void run_document_tests();
 void run_help_tests();
 void run_matcher_tests();
@@ -24,6 +25,7 @@ int main()
         test_case{"builtin_view", run_builtin_view_tests},
         test_case{"candidate", run_candidate_tests},
         test_case{"candidate_text", run_candidate_text_tests},
+        test_case{"cli", run_cli_tests},
         test_case{"document", run_document_tests},
         test_case{"help", run_help_tests},
         test_case{"matcher", run_matcher_tests},

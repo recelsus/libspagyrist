@@ -3,6 +3,7 @@ add_executable(spagyrist_tests
   test_builtin_view.cpp
   test_candidate.cpp
   test_candidate_text.cpp
+  test_cli.cpp
   test_document.cpp
   test_help.cpp
   test_matcher.cpp
