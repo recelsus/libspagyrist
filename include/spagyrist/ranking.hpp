@@ -23,6 +23,9 @@ struct ranking_options {
 struct ranked_candidate {
     std::size_t index{};
     double score{};
+    std::vector<std::size_t> search_positions;
+    std::vector<std::size_t> display_positions;
+    // Compatibility field. Positions are based on the searchable text.
     std::vector<std::size_t> positions;
 };
 

@@ -89,7 +89,7 @@ std::string render_builtin_selector_screen(
 
         std::string line = row == state.cursor() ? "> " : "  ";
         line += truncate_line(
-            highlighted_display(candidate->display, ranked_candidate.positions, options.use_color),
+            highlighted_display(candidate->display, ranked_candidate.display_positions, options.use_color),
             options.width > 2 ? options.width - 2 : options.width);
         append_line(output, line);
     }

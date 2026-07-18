@@ -23,7 +23,8 @@ std::string sanitize_candidate_text(std::string_view value)
     std::string output;
     output.reserve(value.size());
     for (const auto ch : value) {
-        if (ch == '\n' || ch == '\r' || ch == '\t') {
+        const auto byte = static_cast<unsigned char>(ch);
+        if (byte < 0x20 || byte == 0x7f) {
             output += ' ';
         } else {
             output += ch;

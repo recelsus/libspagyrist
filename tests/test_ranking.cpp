@@ -76,6 +76,25 @@ void ranking_preserves_match_positions()
 
     SPAGYRIST_CHECK(ranked.size() == 1);
     SPAGYRIST_CHECK(ranked[0].positions == std::vector<std::size_t>({0, 4}));
+    SPAGYRIST_CHECK(ranked[0].search_positions == std::vector<std::size_t>({0, 4}));
+    SPAGYRIST_CHECK(ranked[0].display_positions == std::vector<std::size_t>({0, 4}));
+}
+
+void ranking_separates_search_and_display_match_positions()
+{
+    std::vector<spagyrist::candidate> candidates;
+    candidates.push_back(candidate_with_fields(
+        "Linux",
+        "Kernel",
+        "Apple appears only in the searchable description.",
+        "https://example.test/linux"));
+
+    const auto projected = spagyrist::project_candidate_texts(candidates);
+    const auto ranked = spagyrist::rank_candidates("Apple", projected);
+
+    SPAGYRIST_CHECK(ranked.size() == 1);
+    SPAGYRIST_CHECK(!ranked[0].search_positions.empty());
+    SPAGYRIST_CHECK(ranked[0].display_positions.empty());
 }
 
 void ranking_can_keep_input_order()
@@ -137,6 +156,7 @@ void run_ranking_tests()
     ranking_keeps_stable_order_for_same_score();
     ranking_filters_unmatched_candidates();
     ranking_preserves_match_positions();
+    ranking_separates_search_and_display_match_positions();
     ranking_can_keep_input_order();
     ranking_handles_empty_candidate_list();
     ranking_filters_scattered_description_matches();

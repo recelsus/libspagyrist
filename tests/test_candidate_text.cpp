@@ -57,16 +57,20 @@ void candidate_text_sanitizes_control_characters()
 {
     spagyrist::candidate value;
     value.id = "control";
-    value.title = "Line\nBreak";
+    value.title = "Line\nBreak\x1b[31m";
     value.subtitle = "Tabbed\tText";
-    value.description = "Carriage\rReturn";
+    value.description = "Carriage\rReturn\aBell";
+    value.url = "https://example.test/delete\x7f";
 
     const auto projected = spagyrist::project_candidate_text(0, value);
 
-    SPAGYRIST_CHECK(projected.display == "Line Break - Tabbed Text");
+    SPAGYRIST_CHECK(projected.display == "Line Break [31m - Tabbed Text");
     SPAGYRIST_CHECK(projected.search.find('\n') == std::string::npos);
     SPAGYRIST_CHECK(projected.search.find('\t') == std::string::npos);
     SPAGYRIST_CHECK(projected.search.find('\r') == std::string::npos);
+    SPAGYRIST_CHECK(projected.search.find('\a') == std::string::npos);
+    SPAGYRIST_CHECK(projected.search.find('\x1b') == std::string::npos);
+    SPAGYRIST_CHECK(projected.search.find('\x7f') == std::string::npos);
 }
 
 void candidate_text_projection_keeps_original_candidate()
