@@ -24,6 +24,7 @@ add_library(spagyrist STATIC
   src/candidate_text.cpp
   src/document.cpp
   src/matcher.cpp
+  src/output/editor.cpp
   src/output/stdout.cpp
   src/ranking.cpp
   src/renderer/markdown_renderer.cpp

@@ -256,6 +256,17 @@ std::optional<spagyrist::format> parse_format(std::string_view value)
     return std::nullopt;
 }
 
+std::optional<spagyrist::output_target> parse_output(std::string_view value)
+{
+    if (value == "stdout") {
+        return spagyrist::output_target::standard_output;
+    }
+    if (value == "editor") {
+        return spagyrist::output_target::editor;
+    }
+    return std::nullopt;
+}
+
 void print_usage(std::ostream& output)
 {
     output
@@ -264,6 +275,7 @@ void print_usage(std::ostream& output)
         << "Options:\n"
         << "  --select <auto|builtin|fzf|number|first>  Selector. Default: auto\n"
         << "  --format <terminal|markdown|plain>        Output format. Default: terminal\n"
+        << "  --output <stdout|editor>                  Output target. Default: stdout\n"
         << "  --list                                    Print fixed candidates and exit\n"
         << "  -h, --help                                Show this help\n";
 }
@@ -274,6 +286,7 @@ int main(int argc, char** argv)
 {
     std::string selector_name{"auto"};
     auto output_format = spagyrist::format::terminal;
+    auto output_target = spagyrist::output_target::standard_output;
     bool list_only = false;
 
     for (int i = 1; i < argc; ++i) {
@@ -286,7 +299,7 @@ int main(int argc, char** argv)
             list_only = true;
             continue;
         }
-        if (arg == "--select" || arg == "--format") {
+        if (arg == "--select" || arg == "--format" || arg == "--output") {
             if (i + 1 >= argc) {
                 std::cerr << "missing value for " << arg << '\n';
                 return 2;
@@ -294,13 +307,20 @@ int main(int argc, char** argv)
             const std::string_view value{argv[++i]};
             if (arg == "--select") {
                 selector_name = value;
-            } else {
+            } else if (arg == "--format") {
                 const auto parsed = parse_format(value);
                 if (!parsed) {
                     std::cerr << "invalid format: " << value << '\n';
                     return 2;
                 }
                 output_format = *parsed;
+            } else {
+                const auto parsed = parse_output(value);
+                if (!parsed) {
+                    std::cerr << "invalid output: " << value << '\n';
+                    return 2;
+                }
+                output_target = *parsed;
             }
             continue;
         }
@@ -344,6 +364,11 @@ int main(int argc, char** argv)
         return 1;
     }
 
-    std::cout << spagyrist::render(items[selected->index].document, output_format);
+    const auto rendered = spagyrist::render(items[selected->index].document, output_format);
+    if (output_target == spagyrist::output_target::editor) {
+        spagyrist::write_editor(rendered, std::cout);
+    } else {
+        spagyrist::write_stdout(std::cout, rendered);
+    }
     return 0;
 }

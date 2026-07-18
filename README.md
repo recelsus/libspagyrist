@@ -13,7 +13,7 @@ libspagyrist then handles selection, rendering, and output.
 - Common document structure: `spagyrist::document`
 - Inline / block based document model
 - Markdown / plain text / terminal rendering
-- stdout output
+- stdout / editor output
 - CMake package install
 
 ## Responsibility
@@ -62,6 +62,7 @@ libspagyrist is used as a subproject.
 ./build/examples/spagyrist_fixed_client --select first --format plain
 ./build/examples/spagyrist_fixed_client --select fzf --format terminal
 printf '2\n' | ./build/examples/spagyrist_fixed_client --select number --format markdown
+VISUAL=true ./build/examples/spagyrist_fixed_client --select first --output editor
 ```
 
 ## Install
@@ -115,6 +116,20 @@ int main()
 
 Applications convert source search results into `spagyrist::candidate`, then
 convert selected data into `spagyrist::document`.
+
+## Output
+
+The default output target is stdout. When editor output is explicitly selected,
+libspagyrist resolves an editor in this order:
+
+```text
+VISUAL -> EDITOR -> nvim -> vim -> vi -> nano -> stdout
+```
+
+Editor-specific options such as `nvim -R` can be configured through `VISUAL` or
+`EDITOR`. Passing an editor command directly as an output target, such as
+`--output "nvim -R"`, is out of scope. Client CLIs should expose only the output
+target, such as `--output editor`.
 
 ## Selector
 
